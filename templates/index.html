@@ -9,16 +9,13 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-success">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">Contagem</a>
+            <a class="navbar-brand" href="#">Controle de Pedidos</a>
             <div class="d-flex">
-                <span class="navbar-text me-3">
-                    Logado como: <strong>{{ session.username }}</strong>
-                </span>
+                <span class="navbar-text me-3">Logado como: <strong>{{ session.username }}</strong></span>
                 <a href="/logout" class="btn btn-outline-light">Sair</a>
             </div>
         </div>
     </nav>
-
     <div class="container mt-5 mb-5">
         <div class="card shadow-sm">
             <div class="card-header bg-success text-white">
@@ -34,15 +31,22 @@
                                 <tr>
                                     <th scope="col">Produto</th>
                                     <th scope="col" style="min-width: 120px;">Quantidade (Caixas)</th>
-                                    <th scope="col" style="min-width: 120px;">Quantidade (Unidades)</th>
+                                    <th scope="col" style="min-width: 150px;">Quantidade (Fracionada)</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for produto in produtos %}
                                 <tr>
-                                    <td>{{ produto }}</td>
-                                    <td><input type="number" pattern="[0-9]*" inputmode="numeric" name="caixas_{{ produto }}" class="form-control" min="0" placeholder="0"></td>
-                                    <td><input type="number" pattern="[0-9]*" inputmode="numeric" name="unidades_{{ produto }}" class="form-control" min="0" placeholder="0"></td>
+                                    <td>{{ produto.nome }}</td>
+                                    <td>
+                                        <input type="number" pattern="[0-9]*" inputmode="numeric" name="caixas_{{ produto.nome }}" class="form-control" min="0" placeholder="0">
+                                    </td>
+                                    <td>
+                                        <div class="input-group">
+                                            <input type="number" pattern="[0-9]*" inputmode="numeric" name="fracionado_{{ produto.nome }}" class="form-control" min="0" placeholder="0">
+                                            <span class="input-group-text">{{ produto.unidade_fracionada }}</span>
+                                        </div>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

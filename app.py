@@ -1,4 +1,4 @@
-# app.py
+# app.py - Versão com unidades de medida dinâmicas
 
 import sqlite3
 import pandas as pd
@@ -51,7 +51,9 @@ def obter_dados_relatorio():
         return None, None
     
     nome_dia = DIAS_PEDIDO[hoje_weekday]
-    produtos_do_dia = PRODUTOS[nome_dia]
+    produtos_do_dia_dict = PRODUTOS[nome_dia]
+    produtos_do_dia_nomes = [p['nome'] for p in produtos_do_dia_dict]
+
     db = get_db()
     hoje_str = datetime.now().strftime('%Y-%m-%d')
     query = f"SELECT produto, tipo, loja, quantidade FROM pedidos WHERE data_pedido = '{hoje_str}'"
@@ -59,28 +61,35 @@ def obter_dados_relatorio():
     db.close()
     
     df_caixas = df_pedidos[df_pedidos['tipo'] == 'Caixa']
-    df_unidades = df_pedidos[df_pedidos['tipo'] == 'Unidade']
-    pivot_caixas = pd.pivot_table(df_caixas, values='quantidade', index='produto', columns='loja', aggfunc='sum')
-    pivot_unidades = pd.pivot_table(df_unidades, values='quantidade', index='produto', columns='loja', aggfunc='sum')
-    pivot_caixas = pivot_caixas.reindex(index=produtos_do_dia, columns=LOJAS).fillna(0).astype(int)
-    pivot_unidades = pivot_unidades.reindex(index=produtos_do_dia, columns=LOJAS).fillna(0).astype(int)
+    df_fracionado = df_pedidos[df_pedidos['tipo'].isin(['KG', 'UN'])]
     
-    def formatar_celula(cx, un):
+    pivot_caixas = pd.pivot_table(df_caixas, values='quantidade', index='produto', columns='loja', aggfunc='sum')
+    pivot_fracionado = pd.pivot_table(df_fracionado, values='quantidade', index='produto', columns='loja', aggfunc='sum')
+    
+    pivot_caixas = pivot_caixas.reindex(index=produtos_do_dia_nomes, columns=LOJAS).fillna(0).astype(int)
+    pivot_fracionado = pivot_fracionado.reindex(index=produtos_do_dia_nomes, columns=LOJAS).fillna(0).astype(int)
+    
+    def formatar_celula(cx, frac_val, unidade):
         cx_str = f"{cx} cx" if cx > 0 else ""
-        un_str = f"{un} kg" if un > 0 else ""
-        if cx > 0 and un > 0: return f"{cx_str} {un_str}"
-        elif cx > 0: return cx_str
-        elif un > 0: return un_str
-        else:
-            # --- LINHA ALTERADA ---
-            return "0" # Antes era "0 kg"
+        # Corrigido para usar a unidade dinâmica (kg ou un)
+        frac_str = f"{frac_val} {unidade.lower()}" if frac_val > 0 else ""
         
-    tabela_final = pd.DataFrame(index=pivot_caixas.index, columns=pivot_caixas.columns)
-    for produto in tabela_final.index:
+        if cx > 0 and frac_val > 0: return f"{cx_str} {frac_str}"
+        elif cx > 0: return cx_str
+        elif frac_val > 0: return frac_str
+        else: return "0"
+
+    tabela_final = pd.DataFrame(index=produtos_do_dia_nomes, columns=LOJAS)
+    
+    # Mapeia nome do produto para sua unidade para consulta rápida
+    mapa_unidades = {p['nome']: p['unidade_fracionada'] for p in produtos_do_dia_dict}
+
+    for produto_nome in tabela_final.index:
+        unidade_fracionada = mapa_unidades[produto_nome]
         for loja in tabela_final.columns:
-            cx_val = pivot_caixas.loc[produto, loja]
-            un_val = pivot_unidades.loc[produto, loja]
-            tabela_final.loc[produto, loja] = formatar_celula(cx_val, un_val)
+            cx_val = pivot_caixas.loc[produto_nome, loja]
+            un_val = pivot_fracionado.loc[produto_nome, loja] if produto_nome in pivot_fracionado.index else 0
+            tabela_final.loc[produto_nome, loja] = formatar_celula(cx_val, un_val, unidade_fracionada)
             
     return tabela_final, nome_dia
 
@@ -92,18 +101,13 @@ def login():
         db = get_db()
         cursor = db.cursor()
         
-        # Lógica de login adaptada para ambos os bancos
         db_url = os.environ.get('DATABASE_URL')
-        if db_url:
-            query = "SELECT * FROM users WHERE username = %s AND password = %s"
-        else:
-            query = "SELECT * FROM users WHERE username = ? AND password = ?"
+        query = "SELECT * FROM users WHERE username = %s AND password = %s" if db_url else "SELECT * FROM users WHERE username = ? AND password = ?"
         
         cursor.execute(query, (username, password))
         user_data = cursor.fetchone()
         
         if user_data:
-            # Constrói um dicionário a partir do resultado para facilitar o acesso
             user = dict(zip([desc[0] for desc in cursor.description], user_data))
         else:
             user = None
@@ -140,6 +144,7 @@ def index():
         produtos_do_dia = PRODUTOS[nome_dia]
         return render_template('index.html', dia=nome_dia, produtos=produtos_do_dia, loja_logada=loja_logada)
     else:
+        # Criar um template 'inativo.html' ou simplesmente mostrar uma mensagem
         return render_template('inativo.html')
 
 @app.route('/enviar', methods=['POST'])
@@ -148,11 +153,14 @@ def enviar_pedido():
     loja = session.get('store_name')
     if not loja:
         return "Erro: Usuario nao associado a uma loja.", 400
+    
     data_pedido_str = datetime.now().strftime('%Y-%m-%d')
     db = get_db()
     cursor = db.cursor()
     
-    # Lógica de query adaptada para ambos os bancos
+    hoje_weekday = datetime.now().weekday()
+    produtos_map = {p['nome']: p['unidade_fracionada'] for p in PRODUTOS[DIAS_PEDIDO[hoje_weekday]]}
+
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
         delete_query = "DELETE FROM pedidos WHERE data_pedido = %s AND loja = %s"
@@ -162,13 +170,22 @@ def enviar_pedido():
         delete_query = "DELETE FROM pedidos WHERE data_pedido = ? AND loja = ?"
         insert_query = "INSERT INTO pedidos (data_pedido, loja, produto, tipo, quantidade) VALUES (?, ?, ?, ?, ?)"
         cursor.execute(delete_query, (data_pedido_str, loja))
-        
+    
     for key, quantidade_str in request.form.items():
-        if key.startswith('caixas_') or key.startswith('unidades_'):
-            if quantidade_str and int(quantidade_str) > 0:
-                quantidade = int(quantidade_str)
-                tipo = 'Caixa' if key.startswith('caixas_') else 'Unidade'
-                nome_produto = key.replace('caixas_', '').replace('unidades_', '')
+        if quantidade_str and int(quantidade_str) > 0:
+            quantidade = int(quantidade_str)
+            tipo = None
+            nome_produto = None
+            
+            if key.startswith('caixas_'):
+                tipo = 'Caixa'
+                nome_produto = key.replace('caixas_', '')
+            elif key.startswith('fracionado_'):
+                nome_produto = key.replace('fracionado_', '')
+                if nome_produto in produtos_map:
+                    tipo = produtos_map[nome_produto]
+
+            if tipo and nome_produto:
                 cursor.execute(insert_query, (data_pedido_str, loja, nome_produto, tipo, quantidade))
     
     db.commit()
@@ -186,7 +203,7 @@ def sucesso():
 def relatorio():
     tabela_final, nome_dia = obter_dados_relatorio()
     if tabela_final is None:
-        return "<h1>Hoje nao e um dia de contagem, portanto nao ha relatorio.</h1>"
+        return "<h1>Hoje nao e um dia de pedido, portanto nao ha relatorio.</h1>"
     
     tabela_final.index.name = None
     html_table = tabela_final.to_html(classes='table table-bordered table-striped table-hover', border=0, table_id='relatorio-tabela')
