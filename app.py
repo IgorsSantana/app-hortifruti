@@ -1,5 +1,7 @@
 # app.py - Versão final e simplificada (SOLUÇÃO 1 - RECOMENDADA)
 
+import os
+import psycopg2
 import sqlite3
 import pandas as pd
 import numpy as np
@@ -17,8 +19,14 @@ DIAS_PEDIDO = {0: "SEGUNDA-FEIRA", 1: "TERÇA-FEIRA", 2: "QUARTA-FEIRA", 4: "SEX
 LOJAS = ["BCS", "SJN", "MEP", "FCL1", "FCL2", "FCL3"]
 
 def get_db():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url:
+        # Conexão com PostgreSQL na Render
+        conn = psycopg2.connect(db_url)
+    else:
+        # Conexão com SQLite local
+        conn = sqlite3.connect(DATABASE)
+        conn.row_factory = sqlite3.Row # Manter isso para o SQLite local
     return conn
 
 def login_required(f):
