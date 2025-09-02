@@ -34,15 +34,15 @@
                                 <tr>
                                     <th scope="col">Produto</th>
                                     <th scope="col" style="min-width: 120px;">Quantidade (Caixas)</th>
-                                    <th scope="col" style="min-width: 120px;">Quantidade (Kgs)</th>
+                                    <th scope="col" style="min-width: 120px;">Quantidade (Unidades)</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for produto in produtos %}
                                 <tr>
                                     <td>{{ produto }}</td>
-                                    <td><input type="number" name="caixas_{{ produto }}" class="form-control" min="0" placeholder="0"></td>
-                                    <td><input type="number" name="unidades_{{ produto }}" class="form-control" min="0" placeholder="0"></td>
+                                    <td><input type="number" pattern="[0-9]*" inputmode="numeric" name="caixas_{{ produto }}" class="form-control" min="0" placeholder="0"></td>
+                                    <td><input type="number" pattern="[0-9]*" inputmode="numeric" name="unidades_{{ produto }}" class="form-control" min="0" placeholder="0"></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
