@@ -1,4 +1,4 @@
-# app.py - Versão que lê produtos do Banco de Dados
+# app.py - Versão com a base do Painel de Administrador
 
 import sqlite3
 import pandas as pd
@@ -8,9 +8,6 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, session
 from datetime import datetime
 from functools import wraps
-
-# REMOVIDO: A importação de PRODUTOS, pois agora os dados vêm do banco.
-# from produtos_config import PRODUTOS 
 
 app = Flask(__name__)
 app.secret_key = 'chave-super-secreta-para-o-projeto-hortifruti'
@@ -46,7 +43,6 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- NOVA FUNÇÃO AUXILIAR ---
 def get_products_for_day(day_id):
     """Busca no banco de dados a lista de produtos para um determinado dia da semana."""
     db = get_db()
@@ -90,10 +86,9 @@ def obter_dados_relatorio():
         return None, None
     
     nome_dia = DIAS_PEDIDO[hoje_weekday]
-    # ATUALIZADO: Busca produtos do banco de dados
     produtos_do_dia_dict = get_products_for_day(hoje_weekday)
     if not produtos_do_dia_dict:
-        return pd.DataFrame(columns=LOJAS), nome_dia # Retorna tabela vazia se não houver produtos
+        return pd.DataFrame(columns=LOJAS), nome_dia
 
     produtos_do_dia_nomes = [p['nome'] for p in produtos_do_dia_dict]
 
@@ -178,7 +173,6 @@ def index():
         return redirect(url_for('relatorio'))
     if hoje in DIAS_PEDIDO:
         nome_dia = DIAS_PEDIDO[hoje]
-        # ATUALIZADO: Busca produtos do banco de dados
         produtos_do_dia = get_products_for_day(hoje)
         return render_template('index.html', dia=nome_dia, produtos=produtos_do_dia, loja_logada=loja_logada)
     else:
@@ -196,7 +190,6 @@ def enviar_pedido():
     cursor = db.cursor()
     
     hoje_weekday = datetime.now().weekday()
-    # ATUALIZADO: Busca produtos do banco de dados para criar o mapa
     produtos_do_dia = get_products_for_day(hoje_weekday)
     produtos_map = {p['nome']: p['unidade_fracionada'] for p in produtos_do_dia}
 
@@ -247,6 +240,53 @@ def relatorio():
     tabela_final.index.name = None
     html_table = tabela_final.to_html(classes='table table-bordered table-striped table-hover', border=0, table_id='relatorio-tabela')
     return render_template('relatorio.html', tabela_html=html_table, data_hoje=datetime.now().strftime('%d/%m/%Y'))
+
+# --- NOVAS ROTAS DO PAINEL DE ADMIN ---
+
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    return render_template('admin/dashboard.html')
+
+@app.route('/admin/products')
+@admin_required
+def admin_products():
+    db = get_db()
+    cursor = db.cursor()
+    
+    # Busca todos os produtos
+    cursor.execute("SELECT * FROM products ORDER BY name;")
+    products_data = cursor.fetchall()
+    
+    # Busca a disponibilidade de todos os produtos
+    cursor.execute("SELECT * FROM product_availability;")
+    availability_data = cursor.fetchall()
+    
+    db.close()
+    
+    # Converte os resultados em dicionários para facilitar o uso
+    products_dicts = [dict(zip([desc[0] for desc in cursor.description], row)) for row in products_data]
+    availability_dicts = [dict(zip([desc[0] for desc in cursor.description], row)) for row in availability_data]
+
+    # Organiza a disponibilidade por produto
+    availability_map = {}
+    for row in availability_dicts:
+        product_id = row['product_id']
+        day_id = row['day_id']
+        if product_id not in availability_map:
+            availability_map[product_id] = []
+        
+        for dia_nome, dia_num in DIAS_PEDIDO.items():
+            if dia_num == day_id:
+                availability_map[product_id].append(dia_nome)
+                break
+
+    # Combina os dados para enviar ao template
+    for product in products_dicts:
+        product['days'] = sorted(availability_map.get(product['id'], []))
+        
+    return render_template('admin/products.html', products=products_dicts)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
