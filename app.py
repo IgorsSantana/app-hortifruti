@@ -1,11 +1,11 @@
-# app.py - Versão com a base do Painel de Administrador
+# app.py - Versão com "Adicionar Produto" no Painel de Administrador
 
 import sqlite3
 import pandas as pd
 import numpy as np
 import psycopg2
 import os
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from datetime import datetime
 from functools import wraps
 
@@ -49,30 +49,25 @@ def get_products_for_day(day_id):
     cursor = db.cursor()
     
     db_url = os.environ.get('DATABASE_URL')
-    if db_url: # PostgreSQL
-        query = """
-            SELECT p.name, p.unidade_fracionada 
-            FROM products p 
-            JOIN product_availability pa ON p.id = pa.product_id 
-            WHERE pa.day_id = %s 
-            ORDER BY p.name;
-        """
-    else: # SQLite
-        query = """
-            SELECT p.name, p.unidade_fracionada 
-            FROM products p 
-            JOIN product_availability pa ON p.id = pa.product_id 
-            WHERE pa.day_id = ? 
-            ORDER BY p.name;
-        """
+    query = """
+        SELECT p.name, p.unidade_fracionada 
+        FROM products p 
+        JOIN product_availability pa ON p.id = pa.product_id 
+        WHERE pa.day_id = %s 
+        ORDER BY p.name;
+    """ if db_url else """
+        SELECT p.name, p.unidade_fracionada 
+        FROM products p 
+        JOIN product_availability pa ON p.id = pa.product_id 
+        WHERE pa.day_id = ? 
+        ORDER BY p.name;
+    """
     
     cursor.execute(query, (day_id,))
     products_data = cursor.fetchall()
     
-    # Converte o resultado (lista de tuplas) em uma lista de dicionários
     products_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in products_data]
     
-    # Renomeia as chaves para corresponder ao que o template espera ('nome')
     for p in products_list:
         p['nome'] = p.pop('name')
 
@@ -241,7 +236,7 @@ def relatorio():
     html_table = tabela_final.to_html(classes='table table-bordered table-striped table-hover', border=0, table_id='relatorio-tabela')
     return render_template('relatorio.html', tabela_html=html_table, data_hoje=datetime.now().strftime('%d/%m/%Y'))
 
-# --- NOVAS ROTAS DO PAINEL DE ADMIN ---
+# --- ROTAS DO PAINEL DE ADMIN ---
 
 @app.route('/admin')
 @admin_required
@@ -254,21 +249,21 @@ def admin_products():
     db = get_db()
     cursor = db.cursor()
     
-    # Busca todos os produtos
     cursor.execute("SELECT * FROM products ORDER BY name;")
     products_data = cursor.fetchall()
     
-    # Busca a disponibilidade de todos os produtos
     cursor.execute("SELECT * FROM product_availability;")
     availability_data = cursor.fetchall()
     
-    db.close()
-    
     # Converte os resultados em dicionários para facilitar o uso
-    products_dicts = [dict(zip([desc[0] for desc in cursor.description], row)) for row in products_data]
-    availability_dicts = [dict(zip([desc[0] for desc in cursor.description], row)) for row in availability_data]
+    column_names_products = [desc[0] for desc in cursor.description]
+    products_dicts = [dict(zip(column_names_products, row)) for row in products_data]
 
-    # Organiza a disponibilidade por produto
+    column_names_availability = [desc[0] for desc in cursor.description]
+    availability_dicts = [dict(zip(column_names_availability, row)) for row in availability_data]
+
+    db.close()
+
     availability_map = {}
     for row in availability_dicts:
         product_id = row['product_id']
@@ -281,12 +276,56 @@ def admin_products():
                 availability_map[product_id].append(dia_nome)
                 break
 
-    # Combina os dados para enviar ao template
     for product in products_dicts:
         product['days'] = sorted(availability_map.get(product['id'], []))
         
     return render_template('admin/products.html', products=products_dicts)
 
+@app.route('/admin/product/add', methods=['GET', 'POST'])
+@admin_required
+def admin_add_product():
+    if request.method == 'POST':
+        name = request.form['name']
+        unidade = request.form['unidade_fracionada']
+        days = request.form.getlist('days')
+
+        db = get_db()
+        cursor = db.cursor()
+        
+        db_url = os.environ.get('DATABASE_URL')
+        
+        try:
+            if db_url: # PostgreSQL
+                cursor.execute("INSERT INTO products (name, unidade_fracionada) VALUES (%s, %s) RETURNING id;", (name, unidade))
+                product_id = cursor.fetchone()[0]
+            else: # SQLite
+                cursor.execute("INSERT INTO products (name, unidade_fracionada) VALUES (?, ?);", (name, unidade))
+                product_id = cursor.lastrowid
+
+            for day_id in days:
+                if db_url: # PostgreSQL
+                    cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (%s, %s);", (product_id, int(day_id)))
+                else: # SQLite
+                    cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (?, ?);", (product_id, int(day_id)))
+            
+            db.commit()
+            flash('Produto adicionado com sucesso!', 'success')
+        except Exception as e:
+            db.rollback()
+            # Mostra um erro mais específico se o produto já existir
+            if 'UNIQUE constraint failed' in str(e) or 'duplicate key value violates unique constraint' in str(e):
+                 flash(f'Erro: O produto "{name}" já existe.', 'danger')
+            else:
+                 flash(f'Erro ao adicionar produto: {e}', 'danger')
+        finally:
+            cursor.close()
+            db.close()
+
+        return redirect(url_for('admin_products'))
+
+    # Para o método GET, passa os dias da semana para o template
+    dias_semana_ordenado = {k: v for k, v in sorted(DIAS_PEDIDO.items())}
+    return render_template('admin/product_form.html', dias_pedido=dias_semana_ordenado)
 
 if __name__ == '__main__':
     app.run(debug=True)
