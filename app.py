@@ -1,4 +1,4 @@
-# app.py - Versão com unidades de medida dinâmicas
+# app.py - Versão que lê produtos do Banco de Dados
 
 import sqlite3
 import pandas as pd
@@ -9,7 +9,8 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from datetime import datetime
 from functools import wraps
 
-from produtos_config import PRODUTOS
+# REMOVIDO: A importação de PRODUTOS, pois agora os dados vêm do banco.
+# from produtos_config import PRODUTOS 
 
 app = Flask(__name__)
 app.secret_key = 'chave-super-secreta-para-o-projeto-hortifruti'
@@ -45,13 +46,55 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# --- NOVA FUNÇÃO AUXILIAR ---
+def get_products_for_day(day_id):
+    """Busca no banco de dados a lista de produtos para um determinado dia da semana."""
+    db = get_db()
+    cursor = db.cursor()
+    
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url: # PostgreSQL
+        query = """
+            SELECT p.name, p.unidade_fracionada 
+            FROM products p 
+            JOIN product_availability pa ON p.id = pa.product_id 
+            WHERE pa.day_id = %s 
+            ORDER BY p.name;
+        """
+    else: # SQLite
+        query = """
+            SELECT p.name, p.unidade_fracionada 
+            FROM products p 
+            JOIN product_availability pa ON p.id = pa.product_id 
+            WHERE pa.day_id = ? 
+            ORDER BY p.name;
+        """
+    
+    cursor.execute(query, (day_id,))
+    products_data = cursor.fetchall()
+    
+    # Converte o resultado (lista de tuplas) em uma lista de dicionários
+    products_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in products_data]
+    
+    # Renomeia as chaves para corresponder ao que o template espera ('nome')
+    for p in products_list:
+        p['nome'] = p.pop('name')
+
+    cursor.close()
+    db.close()
+    return products_list
+
 def obter_dados_relatorio():
     hoje_weekday = datetime.now().weekday()
     if hoje_weekday not in DIAS_PEDIDO:
         return None, None
     
     nome_dia = DIAS_PEDIDO[hoje_weekday]
-    produtos_do_dia_dict = PRODUTOS[nome_dia]
+    # ATUALIZADO: Busca produtos do banco de dados
+    produtos_do_dia_dict = get_products_for_day(hoje_weekday)
+    if not produtos_do_dia_dict:
+        return pd.DataFrame(columns=LOJAS), nome_dia # Retorna tabela vazia se não houver produtos
+
     produtos_do_dia_nomes = [p['nome'] for p in produtos_do_dia_dict]
 
     db = get_db()
@@ -71,23 +114,19 @@ def obter_dados_relatorio():
     
     def formatar_celula(cx, frac_val, unidade):
         cx_str = f"{cx} cx" if cx > 0 else ""
-        # Corrigido para usar a unidade dinâmica (kg ou un)
         frac_str = f"{frac_val} {unidade.lower()}" if frac_val > 0 else ""
-        
         if cx > 0 and frac_val > 0: return f"{cx_str} {frac_str}"
         elif cx > 0: return cx_str
         elif frac_val > 0: return frac_str
         else: return "0"
 
     tabela_final = pd.DataFrame(index=produtos_do_dia_nomes, columns=LOJAS)
-    
-    # Mapeia nome do produto para sua unidade para consulta rápida
     mapa_unidades = {p['nome']: p['unidade_fracionada'] for p in produtos_do_dia_dict}
 
     for produto_nome in tabela_final.index:
-        unidade_fracionada = mapa_unidades[produto_nome]
+        unidade_fracionada = mapa_unidades.get(produto_nome, 'un')
         for loja in tabela_final.columns:
-            cx_val = pivot_caixas.loc[produto_nome, loja]
+            cx_val = pivot_caixas.loc[produto_nome, loja] if produto_nome in pivot_caixas.index else 0
             un_val = pivot_fracionado.loc[produto_nome, loja] if produto_nome in pivot_fracionado.index else 0
             tabela_final.loc[produto_nome, loja] = formatar_celula(cx_val, un_val, unidade_fracionada)
             
@@ -111,10 +150,8 @@ def login():
             user = dict(zip([desc[0] for desc in cursor.description], user_data))
         else:
             user = None
-
         cursor.close()
         db.close()
-
         if user:
             session['username'] = user['username']
             session['role'] = user['role']
@@ -141,10 +178,10 @@ def index():
         return redirect(url_for('relatorio'))
     if hoje in DIAS_PEDIDO:
         nome_dia = DIAS_PEDIDO[hoje]
-        produtos_do_dia = PRODUTOS[nome_dia]
+        # ATUALIZADO: Busca produtos do banco de dados
+        produtos_do_dia = get_products_for_day(hoje)
         return render_template('index.html', dia=nome_dia, produtos=produtos_do_dia, loja_logada=loja_logada)
     else:
-        # Criar um template 'inativo.html' ou simplesmente mostrar uma mensagem
         return render_template('inativo.html')
 
 @app.route('/enviar', methods=['POST'])
@@ -159,7 +196,9 @@ def enviar_pedido():
     cursor = db.cursor()
     
     hoje_weekday = datetime.now().weekday()
-    produtos_map = {p['nome']: p['unidade_fracionada'] for p in PRODUTOS[DIAS_PEDIDO[hoje_weekday]]}
+    # ATUALIZADO: Busca produtos do banco de dados para criar o mapa
+    produtos_do_dia = get_products_for_day(hoje_weekday)
+    produtos_map = {p['nome']: p['unidade_fracionada'] for p in produtos_do_dia}
 
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
