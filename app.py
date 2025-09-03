@@ -1,4 +1,4 @@
-# app.py - Versão com correção no Painel de Administrador
+# app.py - Versão com correção na listagem de produtos do Admin
 
 import sqlite3
 import pandas as pd
@@ -48,11 +48,13 @@ def get_products_for_day(day_id):
     cursor = db.cursor()
     db_url = os.environ.get('DATABASE_URL')
     query = """
-        SELECT p.name, p.unidade_fracionada FROM products p 
+        SELECT p.name, p.unidade_fracionada 
+        FROM products p 
         JOIN product_availability pa ON p.id = pa.product_id 
         WHERE pa.day_id = %s ORDER BY p.name;
     """ if db_url else """
-        SELECT p.name, p.unidade_fracionada FROM products p 
+        SELECT p.name, p.unidade_fracionada 
+        FROM products p 
         JOIN product_availability pa ON p.id = pa.product_id 
         WHERE pa.day_id = ? ORDER BY p.name;
     """
@@ -218,10 +220,10 @@ def admin_dashboard():
 def admin_products():
     db = get_db()
     cursor = db.cursor()
-    
     db_url = os.environ.get('DATABASE_URL')
-    # Consulta SQL mais inteligente que já une as tabelas e agrupa os dias
+    
     if db_url: # PostgreSQL
+        # STRING_AGG agrupa os IDs dos dias em um único texto, ex: "1,4,5"
         query = """
             SELECT p.id, p.name, p.unidade_fracionada, STRING_AGG(CAST(pa.day_id AS TEXT), ',') as days_str
             FROM products p
@@ -230,6 +232,7 @@ def admin_products():
             ORDER BY p.name;
         """
     else: # SQLite
+        # GROUP_CONCAT faz a mesma coisa no SQLite
         query = """
             SELECT p.id, p.name, p.unidade_fracionada, GROUP_CONCAT(pa.day_id) as days_str
             FROM products p
@@ -244,17 +247,16 @@ def admin_products():
     
     products_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in products_data]
 
-    # Mapeia os IDs dos dias para os nomes
     id_to_day_name = {v: k for k, v in DIAS_PEDIDO.items()}
 
     # Processa a string de dias (ex: "1,4,5") em uma lista de nomes (ex: ["TERÇA-FEIRA", ...])
     for product in products_list:
         if product['days_str']:
             day_ids = [int(i) for i in product['days_str'].split(',')]
-            product['days'] = sorted([id_to_day_name[day_id] for day_id in day_ids])
+            product['days'] = sorted([id_to_day_name.get(day_id, '') for day_id in day_ids])
         else:
-            product['days'] = [] # Se não tiver dias, retorna uma lista vazia
-        
+            product['days'] = []
+            
     return render_template('admin/products.html', products=products_list)
 
 @app.route('/admin/product/add', methods=['GET', 'POST'])
@@ -275,7 +277,6 @@ def admin_add_product():
                 cursor.execute("INSERT INTO products (name, unidade_fracionada) VALUES (?, ?);", (name, unidade))
                 product_id = cursor.lastrowid
             
-            # Deleta disponibilidades antigas para garantir consistência (útil para a função de editar)
             cursor.execute("DELETE FROM product_availability WHERE product_id = %s;" if db_url else "DELETE FROM product_availability WHERE product_id = ?;", (product_id,))
 
             for day_id in days:
