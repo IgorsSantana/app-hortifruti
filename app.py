@@ -1,4 +1,4 @@
-# app.py - Versão com correção na listagem de produtos do Admin
+# app.py - Versão com "Editar Produto" no Painel de Administrador
 
 import sqlite3
 import pandas as pd
@@ -16,6 +16,7 @@ DATABASE = 'hortifruti.db'
 DIAS_PEDIDO = {0: "SEGUNDA-FEIRA", 1: "TERÇA-FEIRA", 2: "QUARTA-FEIRA", 4: "SEXTA-FEIRA", 5: "SÁBADO"}
 LOJAS = ["BCS", "SJN", "MEP", "FCL1", "FCL2", "FCL3"]
 
+# ... (Todas as funções até as rotas de admin permanecem iguais)
 def get_db():
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
@@ -47,34 +48,21 @@ def get_products_for_day(day_id):
     db = get_db()
     cursor = db.cursor()
     db_url = os.environ.get('DATABASE_URL')
-    query = """
-        SELECT p.name, p.unidade_fracionada 
-        FROM products p 
-        JOIN product_availability pa ON p.id = pa.product_id 
-        WHERE pa.day_id = %s ORDER BY p.name;
-    """ if db_url else """
-        SELECT p.name, p.unidade_fracionada 
-        FROM products p 
-        JOIN product_availability pa ON p.id = pa.product_id 
-        WHERE pa.day_id = ? ORDER BY p.name;
-    """
+    query = "SELECT p.name, p.unidade_fracionada FROM products p JOIN product_availability pa ON p.id = pa.product_id WHERE pa.day_id = %s ORDER BY p.name;" if db_url else "SELECT p.name, p.unidade_fracionada FROM products p JOIN product_availability pa ON p.id = pa.product_id WHERE pa.day_id = ? ORDER BY p.name;"
     cursor.execute(query, (day_id,))
     products_data = cursor.fetchall()
     products_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in products_data]
-    for p in products_list:
-        p['nome'] = p.pop('name')
+    for p in products_list: p['nome'] = p.pop('name')
     cursor.close()
     db.close()
     return products_list
 
 def obter_dados_relatorio():
     hoje_weekday = datetime.now().weekday()
-    if hoje_weekday not in DIAS_PEDIDO:
-        return None, None
+    if hoje_weekday not in DIAS_PEDIDO: return None, None
     nome_dia = DIAS_PEDIDO[hoje_weekday]
     produtos_do_dia_dict = get_products_for_day(hoje_weekday)
-    if not produtos_do_dia_dict:
-        return pd.DataFrame(columns=LOJAS), nome_dia
+    if not produtos_do_dia_dict: return pd.DataFrame(columns=LOJAS), nome_dia
     produtos_do_dia_nomes = [p['nome'] for p in produtos_do_dia_dict]
     db = get_db()
     hoje_str = datetime.now().strftime('%Y-%m-%d')
@@ -106,6 +94,7 @@ def obter_dados_relatorio():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # ... código sem alteração ...
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -115,22 +104,17 @@ def login():
         query = "SELECT * FROM users WHERE username = %s AND password = %s" if db_url else "SELECT * FROM users WHERE username = ? AND password = ?"
         cursor.execute(query, (username, password))
         user_data = cursor.fetchone()
-        if user_data:
-            user = dict(zip([desc[0] for desc in cursor.description], user_data))
-        else:
-            user = None
+        if user_data: user = dict(zip([desc[0] for desc in cursor.description], user_data))
+        else: user = None
         cursor.close()
         db.close()
         if user:
             session['username'] = user['username']
             session['role'] = user['role']
             session['store_name'] = user['store_name']
-            if user['role'] == 'admin':
-                return redirect(url_for('relatorio'))
-            else:
-                return redirect(url_for('index'))
-        else:
-            return render_template('login.html', error='Usuario ou senha invalidos.')
+            if user['role'] == 'admin': return redirect(url_for('relatorio'))
+            else: return redirect(url_for('index'))
+        else: return render_template('login.html', error='Usuario ou senha invalidos.')
     return render_template('login.html')
 
 @app.route('/logout')
@@ -141,23 +125,22 @@ def logout():
 @app.route('/')
 @login_required
 def index():
+    # ... código sem alteração ...
     hoje = datetime.now().weekday()
     loja_logada = session.get('store_name')
-    if session.get('role') == 'admin':
-        return redirect(url_for('relatorio'))
+    if session.get('role') == 'admin': return redirect(url_for('relatorio'))
     if hoje in DIAS_PEDIDO:
         nome_dia = DIAS_PEDIDO[hoje]
         produtos_do_dia = get_products_for_day(hoje)
         return render_template('index.html', dia=nome_dia, produtos=produtos_do_dia, loja_logada=loja_logada)
-    else:
-        return render_template('inativo.html')
+    else: return render_template('inativo.html')
 
 @app.route('/enviar', methods=['POST'])
 @login_required
 def enviar_pedido():
+    # ... código sem alteração ...
     loja = session.get('store_name')
-    if not loja:
-        return "Erro: Usuario nao associado a uma loja.", 400
+    if not loja: return "Erro: Usuario nao associado a uma loja.", 400
     data_pedido_str = datetime.now().strftime('%Y-%m-%d')
     db = get_db()
     cursor = db.cursor()
@@ -183,10 +166,8 @@ def enviar_pedido():
                 nome_produto = key.replace('caixas_', '')
             elif key.startswith('fracionado_'):
                 nome_produto = key.replace('fracionado_', '')
-                if nome_produto in produtos_map:
-                    tipo = produtos_map[nome_produto]
-            if tipo and nome_produto:
-                cursor.execute(insert_query, (data_pedido_str, loja, nome_produto, tipo, quantidade))
+                if nome_produto in produtos_map: tipo = produtos_map[nome_produto]
+            if tipo and nome_produto: cursor.execute(insert_query, (data_pedido_str, loja, nome_produto, tipo, quantidade))
     db.commit()
     cursor.close()
     db.close()
@@ -200,9 +181,9 @@ def sucesso():
 @app.route('/relatorio')
 @admin_required
 def relatorio():
+    # ... código sem alteração ...
     tabela_final, nome_dia = obter_dados_relatorio()
-    if tabela_final is None:
-        return "<h1>Hoje nao e um dia de pedido, portanto nao ha relatorio.</h1>"
+    if tabela_final is None: return "<h1>Hoje nao e um dia de pedido, portanto nao ha relatorio.</h1>"
     tabela_final.index.name = None
     html_table = tabela_final.to_html(classes='table table-bordered table-striped table-hover', border=0, table_id='relatorio-tabela')
     return render_template('relatorio.html', tabela_html=html_table, data_hoje=datetime.now().strftime('%d/%m/%Y'))
@@ -214,49 +195,24 @@ def relatorio():
 def admin_dashboard():
     return render_template('admin/dashboard.html')
 
-# --- FUNÇÃO ATUALIZADA E CORRIGIDA ---
 @app.route('/admin/products')
 @admin_required
 def admin_products():
     db = get_db()
     cursor = db.cursor()
     db_url = os.environ.get('DATABASE_URL')
-    
-    if db_url: # PostgreSQL
-        # STRING_AGG agrupa os IDs dos dias em um único texto, ex: "1,4,5"
-        query = """
-            SELECT p.id, p.name, p.unidade_fracionada, STRING_AGG(CAST(pa.day_id AS TEXT), ',') as days_str
-            FROM products p
-            LEFT JOIN product_availability pa ON p.id = pa.product_id
-            GROUP BY p.id, p.name, p.unidade_fracionada
-            ORDER BY p.name;
-        """
-    else: # SQLite
-        # GROUP_CONCAT faz a mesma coisa no SQLite
-        query = """
-            SELECT p.id, p.name, p.unidade_fracionada, GROUP_CONCAT(pa.day_id) as days_str
-            FROM products p
-            LEFT JOIN product_availability pa ON p.id = pa.product_id
-            GROUP BY p.id, p.name, p.unidade_fracionada
-            ORDER BY p.name;
-        """
-    
+    query = "SELECT p.id, p.name, p.unidade_fracionada, STRING_AGG(CAST(pa.day_id AS TEXT), ',') as days_str FROM products p LEFT JOIN product_availability pa ON p.id = pa.product_id GROUP BY p.id, p.name, p.unidade_fracionada ORDER BY p.name;" if db_url else "SELECT p.id, p.name, p.unidade_fracionada, GROUP_CONCAT(pa.day_id) as days_str FROM products p LEFT JOIN product_availability pa ON p.id = pa.product_id GROUP BY p.id, p.name, p.unidade_fracionada ORDER BY p.name;"
     cursor.execute(query)
     products_data = cursor.fetchall()
-    db.close()
-    
     products_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in products_data]
-
+    db.close()
     id_to_day_name = {v: k for k, v in DIAS_PEDIDO.items()}
-
-    # Processa a string de dias (ex: "1,4,5") em uma lista de nomes (ex: ["TERÇA-FEIRA", ...])
     for product in products_list:
         if product['days_str']:
             day_ids = [int(i) for i in product['days_str'].split(',')]
             product['days'] = sorted([id_to_day_name.get(day_id, '') for day_id in day_ids])
         else:
             product['days'] = []
-            
     return render_template('admin/products.html', products=products_list)
 
 @app.route('/admin/product/add', methods=['GET', 'POST'])
@@ -276,15 +232,11 @@ def admin_add_product():
             else:
                 cursor.execute("INSERT INTO products (name, unidade_fracionada) VALUES (?, ?);", (name, unidade))
                 product_id = cursor.lastrowid
-            
-            cursor.execute("DELETE FROM product_availability WHERE product_id = %s;" if db_url else "DELETE FROM product_availability WHERE product_id = ?;", (product_id,))
-
             for day_id in days:
                 if db_url:
                     cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (%s, %s);", (product_id, int(day_id)))
                 else:
                     cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (?, ?);", (product_id, int(day_id)))
-            
             db.commit()
             flash('Produto adicionado com sucesso!', 'success')
         except Exception as e:
@@ -297,9 +249,62 @@ def admin_add_product():
             cursor.close()
             db.close()
         return redirect(url_for('admin_products'))
+    dias_semana_ordenado = {k: v for k, v in sorted(DIAS_PEDIDO.items())}
+    # Passa product=None para indicar que é um formulário de adição
+    return render_template('admin/product_form.html', dias_pedido=dias_semana_ordenado, product=None)
+
+# --- NOVA ROTA PARA EDITAR PRODUTO ---
+@app.route('/admin/product/edit/<int:product_id>', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_product(product_id):
+    db = get_db()
+    cursor = db.cursor()
+    db_url = os.environ.get('DATABASE_URL')
+
+    if request.method == 'POST':
+        name = request.form['name']
+        unidade = request.form['unidade_fracionada']
+        days = request.form.getlist('days')
+        
+        try:
+            # 1. Atualiza os dados na tabela 'products'
+            cursor.execute("UPDATE products SET name = %s, unidade_fracionada = %s WHERE id = %s;" if db_url else "UPDATE products SET name = ?, unidade_fracionada = ? WHERE id = ?;", (name, unidade, product_id))
+            
+            # 2. Apaga a disponibilidade de dias antiga
+            cursor.execute("DELETE FROM product_availability WHERE product_id = %s;" if db_url else "DELETE FROM product_availability WHERE product_id = ?;", (product_id,))
+            
+            # 3. Insere a nova disponibilidade de dias
+            for day_id in days:
+                if db_url:
+                    cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (%s, %s);", (product_id, int(day_id)))
+                else:
+                    cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (?, ?);", (product_id, int(day_id)))
+            
+            db.commit()
+            flash('Produto atualizado com sucesso!', 'success')
+        except Exception as e:
+            db.rollback()
+            flash(f'Erro ao atualizar produto: {e}', 'danger')
+        finally:
+            cursor.close()
+            db.close()
+        
+        return redirect(url_for('admin_products'))
+
+    # Se for GET, busca os dados do produto para preencher o formulário
+    cursor.execute("SELECT * FROM products WHERE id = %s;" if db_url else "SELECT * FROM products WHERE id = ?;", (product_id,))
+    product_data = cursor.fetchone()
+    product = dict(zip([desc[0] for desc in cursor.description], product_data))
+
+    cursor.execute("SELECT day_id FROM product_availability WHERE product_id = %s;" if db_url else "SELECT day_id FROM product_availability WHERE product_id = ?;", (product_id,))
+    availability_data = cursor.fetchall()
+    product['days_ids'] = [row[0] for row in availability_data]
+
+    cursor.close()
+    db.close()
     
     dias_semana_ordenado = {k: v for k, v in sorted(DIAS_PEDIDO.items())}
-    return render_template('admin/product_form.html', dias_pedido=dias_semana_ordenado)
+    return render_template('admin/product_form.html', dias_pedido=dias_semana_ordenado, product=product)
 
 if __name__ == '__main__':
     app.run(debug=True)
