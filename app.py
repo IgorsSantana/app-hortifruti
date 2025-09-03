@@ -1,4 +1,4 @@
-# app.py - Versão com "Editar Produto" no Painel de Administrador
+# app.py - Versão com CRUD completo de Produtos
 
 import sqlite3
 import pandas as pd
@@ -211,8 +211,7 @@ def admin_products():
         if product['days_str']:
             day_ids = [int(i) for i in product['days_str'].split(',')]
             product['days'] = sorted([id_to_day_name.get(day_id, '') for day_id in day_ids])
-        else:
-            product['days'] = []
+        else: product['days'] = []
     return render_template('admin/products.html', products=products_list)
 
 @app.route('/admin/product/add', methods=['GET', 'POST'])
@@ -233,53 +232,37 @@ def admin_add_product():
                 cursor.execute("INSERT INTO products (name, unidade_fracionada) VALUES (?, ?);", (name, unidade))
                 product_id = cursor.lastrowid
             for day_id in days:
-                if db_url:
-                    cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (%s, %s);", (product_id, int(day_id)))
-                else:
-                    cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (?, ?);", (product_id, int(day_id)))
+                if db_url: cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (%s, %s);", (product_id, int(day_id)))
+                else: cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (?, ?);", (product_id, int(day_id)))
             db.commit()
             flash('Produto adicionado com sucesso!', 'success')
         except Exception as e:
             db.rollback()
-            if 'UNIQUE constraint failed' in str(e) or 'duplicate key value violates unique constraint' in str(e):
-                 flash(f'Erro: O produto "{name}" ja existe.', 'danger')
-            else:
-                 flash(f'Erro ao adicionar produto: {e}', 'danger')
+            if 'UNIQUE constraint failed' in str(e) or 'duplicate key value violates unique constraint' in str(e): flash(f'Erro: O produto "{name}" ja existe.', 'danger')
+            else: flash(f'Erro ao adicionar produto: {e}', 'danger')
         finally:
             cursor.close()
             db.close()
         return redirect(url_for('admin_products'))
     dias_semana_ordenado = {k: v for k, v in sorted(DIAS_PEDIDO.items())}
-    # Passa product=None para indicar que é um formulário de adição
     return render_template('admin/product_form.html', dias_pedido=dias_semana_ordenado, product=None)
 
-# --- NOVA ROTA PARA EDITAR PRODUTO ---
 @app.route('/admin/product/edit/<int:product_id>', methods=['GET', 'POST'])
 @admin_required
 def admin_edit_product(product_id):
     db = get_db()
     cursor = db.cursor()
     db_url = os.environ.get('DATABASE_URL')
-
     if request.method == 'POST':
         name = request.form['name']
         unidade = request.form['unidade_fracionada']
         days = request.form.getlist('days')
-        
         try:
-            # 1. Atualiza os dados na tabela 'products'
             cursor.execute("UPDATE products SET name = %s, unidade_fracionada = %s WHERE id = %s;" if db_url else "UPDATE products SET name = ?, unidade_fracionada = ? WHERE id = ?;", (name, unidade, product_id))
-            
-            # 2. Apaga a disponibilidade de dias antiga
             cursor.execute("DELETE FROM product_availability WHERE product_id = %s;" if db_url else "DELETE FROM product_availability WHERE product_id = ?;", (product_id,))
-            
-            # 3. Insere a nova disponibilidade de dias
             for day_id in days:
-                if db_url:
-                    cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (%s, %s);", (product_id, int(day_id)))
-                else:
-                    cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (?, ?);", (product_id, int(day_id)))
-            
+                if db_url: cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (%s, %s);", (product_id, int(day_id)))
+                else: cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (?, ?);", (product_id, int(day_id)))
             db.commit()
             flash('Produto atualizado com sucesso!', 'success')
         except Exception as e:
@@ -288,23 +271,39 @@ def admin_edit_product(product_id):
         finally:
             cursor.close()
             db.close()
-        
         return redirect(url_for('admin_products'))
-
-    # Se for GET, busca os dados do produto para preencher o formulário
     cursor.execute("SELECT * FROM products WHERE id = %s;" if db_url else "SELECT * FROM products WHERE id = ?;", (product_id,))
     product_data = cursor.fetchone()
     product = dict(zip([desc[0] for desc in cursor.description], product_data))
-
     cursor.execute("SELECT day_id FROM product_availability WHERE product_id = %s;" if db_url else "SELECT day_id FROM product_availability WHERE product_id = ?;", (product_id,))
     availability_data = cursor.fetchall()
     product['days_ids'] = [row[0] for row in availability_data]
-
     cursor.close()
     db.close()
-    
     dias_semana_ordenado = {k: v for k, v in sorted(DIAS_PEDIDO.items())}
     return render_template('admin/product_form.html', dias_pedido=dias_semana_ordenado, product=product)
+
+# --- NOVA ROTA PARA APAGAR PRODUTO ---
+@app.route('/admin/product/delete/<int:product_id>', methods=['POST'])
+@admin_required
+def admin_delete_product(product_id):
+    db = get_db()
+    cursor = db.cursor()
+    db_url = os.environ.get('DATABASE_URL')
+    try:
+        # Apaga primeiro da tabela de disponibilidade (boa prática)
+        cursor.execute("DELETE FROM product_availability WHERE product_id = %s;" if db_url else "DELETE FROM product_availability WHERE product_id = ?;", (product_id,))
+        # Apaga da tabela principal de produtos
+        cursor.execute("DELETE FROM products WHERE id = %s;" if db_url else "DELETE FROM products WHERE id = ?;", (product_id,))
+        db.commit()
+        flash('Produto apagado com sucesso!', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Erro ao apagar produto: {e}', 'danger')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect(url_for('admin_products'))
 
 if __name__ == '__main__':
     app.run(debug=True)
