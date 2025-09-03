@@ -1,4 +1,4 @@
-# app.py - Versão com "Adicionar Produto" no Painel de Administrador
+# app.py - Versão com correção no Painel de Administrador
 
 import sqlite3
 import pandas as pd
@@ -44,33 +44,23 @@ def admin_required(f):
     return decorated_function
 
 def get_products_for_day(day_id):
-    """Busca no banco de dados a lista de produtos para um determinado dia da semana."""
     db = get_db()
     cursor = db.cursor()
-    
     db_url = os.environ.get('DATABASE_URL')
     query = """
-        SELECT p.name, p.unidade_fracionada 
-        FROM products p 
+        SELECT p.name, p.unidade_fracionada FROM products p 
         JOIN product_availability pa ON p.id = pa.product_id 
-        WHERE pa.day_id = %s 
-        ORDER BY p.name;
+        WHERE pa.day_id = %s ORDER BY p.name;
     """ if db_url else """
-        SELECT p.name, p.unidade_fracionada 
-        FROM products p 
+        SELECT p.name, p.unidade_fracionada FROM products p 
         JOIN product_availability pa ON p.id = pa.product_id 
-        WHERE pa.day_id = ? 
-        ORDER BY p.name;
+        WHERE pa.day_id = ? ORDER BY p.name;
     """
-    
     cursor.execute(query, (day_id,))
     products_data = cursor.fetchall()
-    
     products_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in products_data]
-    
     for p in products_list:
         p['nome'] = p.pop('name')
-
     cursor.close()
     db.close()
     return products_list
@@ -79,29 +69,22 @@ def obter_dados_relatorio():
     hoje_weekday = datetime.now().weekday()
     if hoje_weekday not in DIAS_PEDIDO:
         return None, None
-    
     nome_dia = DIAS_PEDIDO[hoje_weekday]
     produtos_do_dia_dict = get_products_for_day(hoje_weekday)
     if not produtos_do_dia_dict:
         return pd.DataFrame(columns=LOJAS), nome_dia
-
     produtos_do_dia_nomes = [p['nome'] for p in produtos_do_dia_dict]
-
     db = get_db()
     hoje_str = datetime.now().strftime('%Y-%m-%d')
     query = f"SELECT produto, tipo, loja, quantidade FROM pedidos WHERE data_pedido = '{hoje_str}'"
     df_pedidos = pd.read_sql_query(query, db)
     db.close()
-    
     df_caixas = df_pedidos[df_pedidos['tipo'] == 'Caixa']
     df_fracionado = df_pedidos[df_pedidos['tipo'].isin(['KG', 'UN'])]
-    
     pivot_caixas = pd.pivot_table(df_caixas, values='quantidade', index='produto', columns='loja', aggfunc='sum')
     pivot_fracionado = pd.pivot_table(df_fracionado, values='quantidade', index='produto', columns='loja', aggfunc='sum')
-    
     pivot_caixas = pivot_caixas.reindex(index=produtos_do_dia_nomes, columns=LOJAS).fillna(0).astype(int)
     pivot_fracionado = pivot_fracionado.reindex(index=produtos_do_dia_nomes, columns=LOJAS).fillna(0).astype(int)
-    
     def formatar_celula(cx, frac_val, unidade):
         cx_str = f"{cx} cx" if cx > 0 else ""
         frac_str = f"{frac_val} {unidade.lower()}" if frac_val > 0 else ""
@@ -109,17 +92,14 @@ def obter_dados_relatorio():
         elif cx > 0: return cx_str
         elif frac_val > 0: return frac_str
         else: return "0"
-
     tabela_final = pd.DataFrame(index=produtos_do_dia_nomes, columns=LOJAS)
     mapa_unidades = {p['nome']: p['unidade_fracionada'] for p in produtos_do_dia_dict}
-
     for produto_nome in tabela_final.index:
         unidade_fracionada = mapa_unidades.get(produto_nome, 'un')
         for loja in tabela_final.columns:
             cx_val = pivot_caixas.loc[produto_nome, loja] if produto_nome in pivot_caixas.index else 0
             un_val = pivot_fracionado.loc[produto_nome, loja] if produto_nome in pivot_fracionado.index else 0
             tabela_final.loc[produto_nome, loja] = formatar_celula(cx_val, un_val, unidade_fracionada)
-            
     return tabela_final, nome_dia
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -129,13 +109,10 @@ def login():
         password = request.form['password']
         db = get_db()
         cursor = db.cursor()
-        
         db_url = os.environ.get('DATABASE_URL')
         query = "SELECT * FROM users WHERE username = %s AND password = %s" if db_url else "SELECT * FROM users WHERE username = ? AND password = ?"
-        
         cursor.execute(query, (username, password))
         user_data = cursor.fetchone()
-        
         if user_data:
             user = dict(zip([desc[0] for desc in cursor.description], user_data))
         else:
@@ -179,15 +156,12 @@ def enviar_pedido():
     loja = session.get('store_name')
     if not loja:
         return "Erro: Usuario nao associado a uma loja.", 400
-    
     data_pedido_str = datetime.now().strftime('%Y-%m-%d')
     db = get_db()
     cursor = db.cursor()
-    
     hoje_weekday = datetime.now().weekday()
     produtos_do_dia = get_products_for_day(hoje_weekday)
     produtos_map = {p['nome']: p['unidade_fracionada'] for p in produtos_do_dia}
-
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
         delete_query = "DELETE FROM pedidos WHERE data_pedido = %s AND loja = %s"
@@ -197,13 +171,11 @@ def enviar_pedido():
         delete_query = "DELETE FROM pedidos WHERE data_pedido = ? AND loja = ?"
         insert_query = "INSERT INTO pedidos (data_pedido, loja, produto, tipo, quantidade) VALUES (?, ?, ?, ?, ?)"
         cursor.execute(delete_query, (data_pedido_str, loja))
-    
     for key, quantidade_str in request.form.items():
         if quantidade_str and int(quantidade_str) > 0:
             quantidade = int(quantidade_str)
             tipo = None
             nome_produto = None
-            
             if key.startswith('caixas_'):
                 tipo = 'Caixa'
                 nome_produto = key.replace('caixas_', '')
@@ -211,10 +183,8 @@ def enviar_pedido():
                 nome_produto = key.replace('fracionado_', '')
                 if nome_produto in produtos_map:
                     tipo = produtos_map[nome_produto]
-
             if tipo and nome_produto:
                 cursor.execute(insert_query, (data_pedido_str, loja, nome_produto, tipo, quantidade))
-    
     db.commit()
     cursor.close()
     db.close()
@@ -231,7 +201,6 @@ def relatorio():
     tabela_final, nome_dia = obter_dados_relatorio()
     if tabela_final is None:
         return "<h1>Hoje nao e um dia de pedido, portanto nao ha relatorio.</h1>"
-    
     tabela_final.index.name = None
     html_table = tabela_final.to_html(classes='table table-bordered table-striped table-hover', border=0, table_id='relatorio-tabela')
     return render_template('relatorio.html', tabela_html=html_table, data_hoje=datetime.now().strftime('%d/%m/%Y'))
@@ -243,43 +212,50 @@ def relatorio():
 def admin_dashboard():
     return render_template('admin/dashboard.html')
 
+# --- FUNÇÃO ATUALIZADA E CORRIGIDA ---
 @app.route('/admin/products')
 @admin_required
 def admin_products():
     db = get_db()
     cursor = db.cursor()
     
-    cursor.execute("SELECT * FROM products ORDER BY name;")
+    db_url = os.environ.get('DATABASE_URL')
+    # Consulta SQL mais inteligente que já une as tabelas e agrupa os dias
+    if db_url: # PostgreSQL
+        query = """
+            SELECT p.id, p.name, p.unidade_fracionada, STRING_AGG(CAST(pa.day_id AS TEXT), ',') as days_str
+            FROM products p
+            LEFT JOIN product_availability pa ON p.id = pa.product_id
+            GROUP BY p.id, p.name, p.unidade_fracionada
+            ORDER BY p.name;
+        """
+    else: # SQLite
+        query = """
+            SELECT p.id, p.name, p.unidade_fracionada, GROUP_CONCAT(pa.day_id) as days_str
+            FROM products p
+            LEFT JOIN product_availability pa ON p.id = pa.product_id
+            GROUP BY p.id, p.name, p.unidade_fracionada
+            ORDER BY p.name;
+        """
+    
+    cursor.execute(query)
     products_data = cursor.fetchall()
-    
-    cursor.execute("SELECT * FROM product_availability;")
-    availability_data = cursor.fetchall()
-    
-    # Converte os resultados em dicionários para facilitar o uso
-    column_names_products = [desc[0] for desc in cursor.description]
-    products_dicts = [dict(zip(column_names_products, row)) for row in products_data]
-
-    column_names_availability = [desc[0] for desc in cursor.description]
-    availability_dicts = [dict(zip(column_names_availability, row)) for row in availability_data]
-
     db.close()
+    
+    products_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in products_data]
 
-    availability_map = {}
-    for row in availability_dicts:
-        product_id = row['product_id']
-        day_id = row['day_id']
-        if product_id not in availability_map:
-            availability_map[product_id] = []
-        
-        for dia_nome, dia_num in DIAS_PEDIDO.items():
-            if dia_num == day_id:
-                availability_map[product_id].append(dia_nome)
-                break
+    # Mapeia os IDs dos dias para os nomes
+    id_to_day_name = {v: k for k, v in DIAS_PEDIDO.items()}
 
-    for product in products_dicts:
-        product['days'] = sorted(availability_map.get(product['id'], []))
+    # Processa a string de dias (ex: "1,4,5") em uma lista de nomes (ex: ["TERÇA-FEIRA", ...])
+    for product in products_list:
+        if product['days_str']:
+            day_ids = [int(i) for i in product['days_str'].split(',')]
+            product['days'] = sorted([id_to_day_name[day_id] for day_id in day_ids])
+        else:
+            product['days'] = [] # Se não tiver dias, retorna uma lista vazia
         
-    return render_template('admin/products.html', products=products_dicts)
+    return render_template('admin/products.html', products=products_list)
 
 @app.route('/admin/product/add', methods=['GET', 'POST'])
 @admin_required
@@ -288,42 +264,39 @@ def admin_add_product():
         name = request.form['name']
         unidade = request.form['unidade_fracionada']
         days = request.form.getlist('days')
-
         db = get_db()
         cursor = db.cursor()
-        
         db_url = os.environ.get('DATABASE_URL')
-        
         try:
-            if db_url: # PostgreSQL
+            if db_url:
                 cursor.execute("INSERT INTO products (name, unidade_fracionada) VALUES (%s, %s) RETURNING id;", (name, unidade))
                 product_id = cursor.fetchone()[0]
-            else: # SQLite
+            else:
                 cursor.execute("INSERT INTO products (name, unidade_fracionada) VALUES (?, ?);", (name, unidade))
                 product_id = cursor.lastrowid
+            
+            # Deleta disponibilidades antigas para garantir consistência (útil para a função de editar)
+            cursor.execute("DELETE FROM product_availability WHERE product_id = %s;" if db_url else "DELETE FROM product_availability WHERE product_id = ?;", (product_id,))
 
             for day_id in days:
-                if db_url: # PostgreSQL
+                if db_url:
                     cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (%s, %s);", (product_id, int(day_id)))
-                else: # SQLite
+                else:
                     cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (?, ?);", (product_id, int(day_id)))
             
             db.commit()
             flash('Produto adicionado com sucesso!', 'success')
         except Exception as e:
             db.rollback()
-            # Mostra um erro mais específico se o produto já existir
             if 'UNIQUE constraint failed' in str(e) or 'duplicate key value violates unique constraint' in str(e):
-                 flash(f'Erro: O produto "{name}" já existe.', 'danger')
+                 flash(f'Erro: O produto "{name}" ja existe.', 'danger')
             else:
                  flash(f'Erro ao adicionar produto: {e}', 'danger')
         finally:
             cursor.close()
             db.close()
-
         return redirect(url_for('admin_products'))
-
-    # Para o método GET, passa os dias da semana para o template
+    
     dias_semana_ordenado = {k: v for k, v in sorted(DIAS_PEDIDO.items())}
     return render_template('admin/product_form.html', dias_pedido=dias_semana_ordenado)
 
