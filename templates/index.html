@@ -39,11 +39,13 @@
                                 <tr>
                                     <td>{{ produto.nome }}</td>
                                     <td>
-                                        <input type="number" pattern="[0-9]*" inputmode="numeric" name="caixas_{{ produto.nome }}" class="form-control" min="0" placeholder="0">
+                                        <input type="number" pattern="[0-9]*" inputmode="numeric" name="caixas_{{ produto.nome }}" class="form-control" min="0" placeholder="0"
+                                               value="{{ dados_salvos.get('caixas_' + produto.nome, '') }}">
                                     </td>
                                     <td>
                                         <div class="input-group">
-                                            <input type="number" pattern="[0-9]*" inputmode="numeric" name="fracionado_{{ produto.nome }}" class="form-control" min="0" placeholder="0">
+                                            <input type="number" pattern="[0-9]*" inputmode="numeric" name="fracionado_{{ produto.nome }}" class="form-control" min="0" placeholder="0"
+                                                   value="{{ dados_salvos.get('fracionado_' + produto.nome, '') }}">
                                             <span class="input-group-text">{{ produto.unidade_fracionada }}</span>
                                         </div>
                                     </td>

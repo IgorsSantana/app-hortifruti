@@ -19,7 +19,6 @@ USUARIOS = [
 # --- LÓGICA DE CONEXÃO E CRIAÇÃO ---
 db_url = os.environ.get('DATABASE_URL')
 is_postgres = bool(db_url)
-
 conn = psycopg2.connect(db_url) if is_postgres else sqlite3.connect('hortifruti.db')
 cur = conn.cursor()
 
@@ -30,69 +29,55 @@ SQL_TYPE = {
     "INSERT_USER": 'INSERT INTO users (username, password, role, store_name) VALUES (%s, %s, %s, %s) ON CONFLICT (username) DO NOTHING;' if is_postgres else 'INSERT OR IGNORE INTO users (username, password, role, store_name) VALUES (?, ?, ?, ?);'
 }
 
-# Tabela de Pedidos
+# Cria as tabelas se elas não existirem
+cur.execute(f'''CREATE TABLE IF NOT EXISTS pedidos (id {SQL_TYPE["SERIAL_PK"]}, data_pedido TEXT NOT NULL, loja TEXT NOT NULL, produto TEXT NOT NULL, tipo TEXT NOT NULL, quantidade INTEGER NOT NULL);''')
+cur.execute(f'''CREATE TABLE IF NOT EXISTS users (id {SQL_TYPE["SERIAL_PK"]}, username {SQL_TYPE["TEXT_UNIQUE"]}, password TEXT NOT NULL, role TEXT NOT NULL, store_name TEXT);''')
+cur.execute(f'''CREATE TABLE IF NOT EXISTS products (id {SQL_TYPE["SERIAL_PK"]}, name {SQL_TYPE["TEXT_UNIQUE"]}, unidade_fracionada TEXT NOT NULL, codigo_interno TEXT UNIQUE);''')
+cur.execute(f'''CREATE TABLE IF NOT EXISTS product_availability (product_id INTEGER NOT NULL, day_id INTEGER NOT NULL, PRIMARY KEY (product_id, day_id));''')
+
+# --- NOVA TABELA ADICIONADA ---
 cur.execute(f'''
-    CREATE TABLE IF NOT EXISTS pedidos (
+    CREATE TABLE IF NOT EXISTS pedidos_finais (
         id {SQL_TYPE["SERIAL_PK"]},
         data_pedido TEXT NOT NULL,
-        loja TEXT NOT NULL,
-        produto TEXT NOT NULL,
-        tipo TEXT NOT NULL,
-        quantidade INTEGER NOT NULL
+        produto_nome TEXT NOT NULL,
+        loja_nome TEXT NOT NULL,
+        quantidade_pedida INTEGER NOT NULL,
+        UNIQUE (data_pedido, produto_nome, loja_nome)
     );''')
-
-# Tabela de Usuários
-cur.execute(f'''
-    CREATE TABLE IF NOT EXISTS users (
-        id {SQL_TYPE["SERIAL_PK"]},
-        username {SQL_TYPE["TEXT_UNIQUE"]},
-        password TEXT NOT NULL,
-        role TEXT NOT NULL,
-        store_name TEXT
-    );''')
-
-# Tabela de Produtos (ATUALIZADA)
-cur.execute(f'''
-    CREATE TABLE IF NOT EXISTS products (
-        id {SQL_TYPE["SERIAL_PK"]},
-        name {SQL_TYPE["TEXT_UNIQUE"]},
-        unidade_fracionada TEXT NOT NULL,
-        codigo_interno TEXT UNIQUE
-    );''')
-
-# Tabela de Disponibilidade dos Produtos
-cur.execute(f'''
-    CREATE TABLE IF NOT EXISTS product_availability (
-        product_id INTEGER NOT NULL,
-        day_id INTEGER NOT NULL,
-        PRIMARY KEY (product_id, day_id)
-    );''')
-
 
 # --- LÓGICA PARA POPULAR AS TABELAS ---
-
-# Insere os usuários padrão
 cur.executemany(SQL_TYPE["INSERT_USER"], USUARIOS)
+conn.commit()
 
-# Migra os produtos do arquivo produtos_config.py para o banco de dados
+# ... (O restante da lógica de migração de produtos permanece o mesmo) ...
+
 print("Iniciando migração de produtos do arquivo de configuração...")
-DIAS_MAP = {"SEGUNDA-FEIRA": 0, "TERÇA-FEIRA": 1, "QUARTA-FEIRA": 2, "SEXTA-FEIRA": 4, "SÁBADO": 5}
+DIAS_MAP = {"SEGUNDA-FEIRA": 0, "TERÇA-FEIRA": 1, "QUARTA-FEIRA": 2, "QUINTA-FEIRA": 3, "SEXTA-FEIRA": 4, "SÁBADO": 5}
 
 for dia_nome, produtos_lista in PRODUTOS.items():
-    if dia_nome not in DIAS_MAP: continue
+    if dia_nome not in DIAS_MAP: 
+        continue
     day_id = DIAS_MAP[dia_nome]
 
     for produto_dict in produtos_lista:
         nome = produto_dict['nome']
         unidade = produto_dict['unidade_fracionada']
-        
-        # Insere o produto na tabela 'products' se ele não existir
+        codigo_interno = produto_dict.get('codigo_interno')
+
         if is_postgres:
-            cur.execute("INSERT INTO products (name, unidade_fracionada) VALUES (%s, %s) ON CONFLICT (name) DO NOTHING;", (nome, unidade))
+            cur.execute("""
+                INSERT INTO products (name, unidade_fracionada, codigo_interno) 
+                VALUES (%s, %s, %s) 
+                ON CONFLICT (name) 
+                DO UPDATE SET 
+                    unidade_fracionada = EXCLUDED.unidade_fracionada, 
+                    codigo_interno = EXCLUDED.codigo_interno;
+            """, (nome, unidade, codigo_interno))
         else: # SQLite
-            cur.execute("INSERT OR IGNORE INTO products (name, unidade_fracionada) VALUES (?, ?);", (nome, unidade))
+            cur.execute("INSERT OR IGNORE INTO products (name, unidade_fracionada, codigo_interno) VALUES (?, ?, ?);", (nome, unidade, codigo_interno))
+            cur.execute("UPDATE products SET unidade_fracionada = ?, codigo_interno = ? WHERE name = ?;", (unidade, codigo_interno, nome))
         
-        # Pega o ID do produto que acabamos de inserir ou que já existia
         if is_postgres:
             cur.execute("SELECT id FROM products WHERE name = %s;", (nome,))
         else:
@@ -100,17 +85,13 @@ for dia_nome, produtos_lista in PRODUTOS.items():
         
         product_id_tuple = cur.fetchone()
         if product_id_tuple:
-            product_id = product_id_tuple[0] if not isinstance(product_id_tuple, dict) else product_id_tuple['id']
-
-            # Vincula o produto ao dia da semana na tabela 'product_availability'
+            product_id = product_id_tuple[0]
             if is_postgres:
                 cur.execute("INSERT INTO product_availability (product_id, day_id) VALUES (%s, %s) ON CONFLICT DO NOTHING;", (product_id, day_id))
             else:
                 cur.execute("INSERT OR IGNORE INTO product_availability (product_id, day_id) VALUES (?, ?);", (product_id, day_id))
 
 print("Migração de produtos concluída.")
-
-# Salva as mudanças e fecha a conexão
 conn.commit()
 cur.close()
 conn.close()
