@@ -29,6 +29,12 @@
                 <label for="name" class="form-label">Nome do Produto</label>
                 <input type="text" class="form-control" id="name" name="name" value="{{ product.name or '' }}" required>
             </div>
+            
+            <div class="mb-3">
+                <label for="codigo_interno" class="form-label">Código Interno</label>
+                <input type="text" class="form-control" id="codigo_interno" name="codigo_interno" value="{{ product.codigo_interno or '' }}">
+            </div>
+
             <div class="mb-3">
                 <label for="unidade_fracionada" class="form-label">Unidade Fracionada</label>
                 <select class="form-select" id="unidade_fracionada" name="unidade_fracionada">

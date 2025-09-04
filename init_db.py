@@ -2,7 +2,7 @@
 import os
 import sqlite3
 import psycopg2
-from produtos_config import PRODUTOS # Importa a lista de produtos para a migração
+from produtos_config import PRODUTOS
 
 # --- DEFINIÇÃO DOS USUÁRIOS ---
 USUARIOS = [
@@ -34,25 +34,30 @@ SQL_TYPE = {
 cur.execute(f'''
     CREATE TABLE IF NOT EXISTS pedidos (
         id {SQL_TYPE["SERIAL_PK"]},
-        data_pedido TEXT NOT NULL, loja TEXT NOT NULL, produto TEXT NOT NULL,
-        tipo TEXT NOT NULL, quantidade INTEGER NOT NULL
+        data_pedido TEXT NOT NULL,
+        loja TEXT NOT NULL,
+        produto TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        quantidade INTEGER NOT NULL
     );''')
 
 # Tabela de Usuários
 cur.execute(f'''
     CREATE TABLE IF NOT EXISTS users (
         id {SQL_TYPE["SERIAL_PK"]},
-        username {SQL_TYPE["TEXT_UNIQUE"]}, password TEXT NOT NULL,
-        role TEXT NOT NULL, store_name TEXT
+        username {SQL_TYPE["TEXT_UNIQUE"]},
+        password TEXT NOT NULL,
+        role TEXT NOT NULL,
+        store_name TEXT
     );''')
 
-# --- NOVAS TABELAS PARA O PAINEL DE ADMIN ---
-# Tabela de Produtos
+# Tabela de Produtos (ATUALIZADA)
 cur.execute(f'''
     CREATE TABLE IF NOT EXISTS products (
         id {SQL_TYPE["SERIAL_PK"]},
         name {SQL_TYPE["TEXT_UNIQUE"]},
-        unidade_fracionada TEXT NOT NULL
+        unidade_fracionada TEXT NOT NULL,
+        codigo_interno TEXT UNIQUE
     );''')
 
 # Tabela de Disponibilidade dos Produtos
@@ -111,3 +116,4 @@ cur.close()
 conn.close()
 
 print("Banco de dados e todas as tabelas foram criados/atualizados com sucesso!")
+print(f"{len(USUARIOS)} usuários foram verificados/inseridos.")

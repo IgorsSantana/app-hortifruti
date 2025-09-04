@@ -41,7 +41,8 @@
             <thead class="table-dark">
                 <tr>
                     <th>Nome do Produto</th>
-                    <th>Unidade Fracionada</th>
+                    <th>Código Interno</th>
+                    <th>Unidade</th>
                     <th>Dias Disponíveis</th>
                     <th>Ações</th>
                 </tr>
@@ -50,6 +51,7 @@
                 {% for product in products %}
                 <tr>
                     <td>{{ product.name }}</td>
+                    <td>{{ product.codigo_interno or 'N/A' }}</td>
                     <td>{{ product.unidade_fracionada }}</td>
                     <td>
                         {% for day in product.days %}
@@ -58,7 +60,6 @@
                     </td>
                     <td class="d-flex">
                         <a href="{{ url_for('admin_edit_product', product_id=product.id) }}" class="btn btn-primary btn-sm me-2">Editar</a>
-                        
                         <form action="{{ url_for('admin_delete_product', product_id=product.id) }}" method="POST" onsubmit="return confirm('Você tem certeza que deseja apagar este produto?');">
                             <button type="submit" class="btn btn-danger btn-sm">Apagar</button>
                         </form>

@@ -1,4 +1,4 @@
-# app.py - Versão com CRUD completo de Produtos
+# app.py - Versão com 'codigo_interno' no admin
 
 import sqlite3
 import pandas as pd
@@ -16,7 +16,6 @@ DATABASE = 'hortifruti.db'
 DIAS_PEDIDO = {0: "SEGUNDA-FEIRA", 1: "TERÇA-FEIRA", 2: "QUARTA-FEIRA", 4: "SEXTA-FEIRA", 5: "SÁBADO"}
 LOJAS = ["BCS", "SJN", "MEP", "FCL1", "FCL2", "FCL3"]
 
-# ... (Todas as funções até as rotas de admin permanecem iguais)
 def get_db():
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
@@ -94,7 +93,6 @@ def obter_dados_relatorio():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # ... código sem alteração ...
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -125,7 +123,6 @@ def logout():
 @app.route('/')
 @login_required
 def index():
-    # ... código sem alteração ...
     hoje = datetime.now().weekday()
     loja_logada = session.get('store_name')
     if session.get('role') == 'admin': return redirect(url_for('relatorio'))
@@ -138,7 +135,6 @@ def index():
 @app.route('/enviar', methods=['POST'])
 @login_required
 def enviar_pedido():
-    # ... código sem alteração ...
     loja = session.get('store_name')
     if not loja: return "Erro: Usuario nao associado a uma loja.", 400
     data_pedido_str = datetime.now().strftime('%Y-%m-%d')
@@ -181,7 +177,6 @@ def sucesso():
 @app.route('/relatorio')
 @admin_required
 def relatorio():
-    # ... código sem alteração ...
     tabela_final, nome_dia = obter_dados_relatorio()
     if tabela_final is None: return "<h1>Hoje nao e um dia de pedido, portanto nao ha relatorio.</h1>"
     tabela_final.index.name = None
@@ -201,7 +196,7 @@ def admin_products():
     db = get_db()
     cursor = db.cursor()
     db_url = os.environ.get('DATABASE_URL')
-    query = "SELECT p.id, p.name, p.unidade_fracionada, STRING_AGG(CAST(pa.day_id AS TEXT), ',') as days_str FROM products p LEFT JOIN product_availability pa ON p.id = pa.product_id GROUP BY p.id, p.name, p.unidade_fracionada ORDER BY p.name;" if db_url else "SELECT p.id, p.name, p.unidade_fracionada, GROUP_CONCAT(pa.day_id) as days_str FROM products p LEFT JOIN product_availability pa ON p.id = pa.product_id GROUP BY p.id, p.name, p.unidade_fracionada ORDER BY p.name;"
+    query = "SELECT p.id, p.name, p.unidade_fracionada, p.codigo_interno, STRING_AGG(CAST(pa.day_id AS TEXT), ',') as days_str FROM products p LEFT JOIN product_availability pa ON p.id = pa.product_id GROUP BY p.id, p.name, p.unidade_fracionada, p.codigo_interno ORDER BY p.name;" if db_url else "SELECT p.id, p.name, p.unidade_fracionada, p.codigo_interno, GROUP_CONCAT(pa.day_id) as days_str FROM products p LEFT JOIN product_availability pa ON p.id = pa.product_id GROUP BY p.id, p.name, p.unidade_fracionada, p.codigo_interno ORDER BY p.name;"
     cursor.execute(query)
     products_data = cursor.fetchall()
     products_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in products_data]
@@ -220,16 +215,17 @@ def admin_add_product():
     if request.method == 'POST':
         name = request.form['name']
         unidade = request.form['unidade_fracionada']
+        codigo_interno = request.form.get('codigo_interno') # Usar .get para ser seguro se o campo não for enviado
         days = request.form.getlist('days')
         db = get_db()
         cursor = db.cursor()
         db_url = os.environ.get('DATABASE_URL')
         try:
             if db_url:
-                cursor.execute("INSERT INTO products (name, unidade_fracionada) VALUES (%s, %s) RETURNING id;", (name, unidade))
+                cursor.execute("INSERT INTO products (name, unidade_fracionada, codigo_interno) VALUES (%s, %s, %s) RETURNING id;", (name, unidade, codigo_interno))
                 product_id = cursor.fetchone()[0]
             else:
-                cursor.execute("INSERT INTO products (name, unidade_fracionada) VALUES (?, ?);", (name, unidade))
+                cursor.execute("INSERT INTO products (name, unidade_fracionada, codigo_interno) VALUES (?, ?, ?);", (name, unidade, codigo_interno))
                 product_id = cursor.lastrowid
             for day_id in days:
                 if db_url: cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (%s, %s);", (product_id, int(day_id)))
@@ -238,7 +234,7 @@ def admin_add_product():
             flash('Produto adicionado com sucesso!', 'success')
         except Exception as e:
             db.rollback()
-            if 'UNIQUE constraint failed' in str(e) or 'duplicate key value violates unique constraint' in str(e): flash(f'Erro: O produto "{name}" ja existe.', 'danger')
+            if 'UNIQUE constraint failed' in str(e) or 'duplicate key value violates unique constraint' in str(e): flash(f'Erro: O produto ou codigo interno "{name}" ja existe.', 'danger')
             else: flash(f'Erro ao adicionar produto: {e}', 'danger')
         finally:
             cursor.close()
@@ -256,9 +252,10 @@ def admin_edit_product(product_id):
     if request.method == 'POST':
         name = request.form['name']
         unidade = request.form['unidade_fracionada']
+        codigo_interno = request.form.get('codigo_interno')
         days = request.form.getlist('days')
         try:
-            cursor.execute("UPDATE products SET name = %s, unidade_fracionada = %s WHERE id = %s;" if db_url else "UPDATE products SET name = ?, unidade_fracionada = ? WHERE id = ?;", (name, unidade, product_id))
+            cursor.execute("UPDATE products SET name = %s, unidade_fracionada = %s, codigo_interno = %s WHERE id = %s;" if db_url else "UPDATE products SET name = ?, unidade_fracionada = ?, codigo_interno = ? WHERE id = ?;", (name, unidade, codigo_interno, product_id))
             cursor.execute("DELETE FROM product_availability WHERE product_id = %s;" if db_url else "DELETE FROM product_availability WHERE product_id = ?;", (product_id,))
             for day_id in days:
                 if db_url: cursor.execute("INSERT INTO product_availability (product_id, day_id) VALUES (%s, %s);", (product_id, int(day_id)))
@@ -272,18 +269,21 @@ def admin_edit_product(product_id):
             cursor.close()
             db.close()
         return redirect(url_for('admin_products'))
+    
     cursor.execute("SELECT * FROM products WHERE id = %s;" if db_url else "SELECT * FROM products WHERE id = ?;", (product_id,))
     product_data = cursor.fetchone()
     product = dict(zip([desc[0] for desc in cursor.description], product_data))
+    
     cursor.execute("SELECT day_id FROM product_availability WHERE product_id = %s;" if db_url else "SELECT day_id FROM product_availability WHERE product_id = ?;", (product_id,))
     availability_data = cursor.fetchall()
     product['days_ids'] = [row[0] for row in availability_data]
+    
     cursor.close()
     db.close()
+    
     dias_semana_ordenado = {k: v for k, v in sorted(DIAS_PEDIDO.items())}
     return render_template('admin/product_form.html', dias_pedido=dias_semana_ordenado, product=product)
 
-# --- NOVA ROTA PARA APAGAR PRODUTO ---
 @app.route('/admin/product/delete/<int:product_id>', methods=['POST'])
 @admin_required
 def admin_delete_product(product_id):
@@ -291,9 +291,7 @@ def admin_delete_product(product_id):
     cursor = db.cursor()
     db_url = os.environ.get('DATABASE_URL')
     try:
-        # Apaga primeiro da tabela de disponibilidade (boa prática)
         cursor.execute("DELETE FROM product_availability WHERE product_id = %s;" if db_url else "DELETE FROM product_availability WHERE product_id = ?;", (product_id,))
-        # Apaga da tabela principal de produtos
         cursor.execute("DELETE FROM products WHERE id = %s;" if db_url else "DELETE FROM products WHERE id = ?;", (product_id,))
         db.commit()
         flash('Produto apagado com sucesso!', 'success')
