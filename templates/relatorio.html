@@ -15,18 +15,26 @@
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
-            .navbar, .botoes-acao {
-                display: none !important;
-            }
-            .container {
-                margin-top: 0 !important;
-                margin-bottom: 0 !important;
-                max-width: 100%;
-            }
-            .card {
-                box-shadow: none !important;
-                border: none !important;
-            }
+            .navbar, .botoes-acao { display: none !important; }
+            .container { margin-top: 0 !important; margin-bottom: 0 !important; max-width: 100%;}
+            .card { box-shadow: none !important; border: none !important; }
+        }
+        /* Ajuste de estilo para a nova coluna de Custo */
+        #relatorio-tabela {
+            table-layout: fixed;
+            width: 100%;
+        }
+        #relatorio-tabela thead th:nth-child(1) { width: 28%; } /* Produto */
+        #relatorio-tabela thead th:nth-child(2) { width: 10%; } /* Custo */
+        /* As 6 colunas de loja restantes dividirão os 62% do espaço */
+        
+        #relatorio-tabela tbody th, #relatorio-tabela td {
+            text-align: left;
+            vertical-align: middle;
+            padding-left: 10px;
+        }
+        #relatorio-tabela td {
+            text-align: center;
         }
     </style>
 </head>
