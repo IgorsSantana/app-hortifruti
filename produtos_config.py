@@ -147,7 +147,7 @@ PRODUTOS = {
         {'nome': 'BATATA LAVADA KG MIUDA', 'unidade_fracionada': 'KG', 'codigo_interno': '310173'},
         {'nome': 'CAJU KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310221'},
         {'nome': 'LARANJA PERA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310136'},
-        {'nome': 'LIMÃO KG', 'unidade_fracionada': 'KG', 'codigo_interno': '365993'},
+        {'nome': 'LIMÃO KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310138'},
         {'nome': 'MAMÃO FORMOSA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310175'},
         {'nome': 'MANDIOCA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310143'},
         {'nome': 'MANGA PALMER KG', 'unidade_fracionada': 'KG', 'codigo_interno': '375054'},
