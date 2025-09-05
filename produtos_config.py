@@ -1,4 +1,4 @@
-# produtos_config.py (Versão com dados padronizados)
+# produtos_config.py
 
 PRODUTOS = {
     "SEGUNDA-FEIRA": [
@@ -22,7 +22,7 @@ PRODUTOS = {
         {'nome': 'AMEIXA KG NACIONAL', 'unidade_fracionada': 'KG', 'codigo_interno': '340139'},
         {'nome': 'ATEMOIA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '350989'},
         {'nome': 'BANANA DA TERRA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310113'},
-        {'nome': 'BANANA MAÇÃ KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310110'},
+        {'nome': 'BANANA MAÇA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310110'},
         {'nome': 'BANANA NANICA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310178'},
         {'nome': 'BANANA OURO KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310111'},
         {'nome': 'BANANA PRATA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310112'},
@@ -155,7 +155,7 @@ PRODUTOS = {
         {'nome': 'MARACUJÁ KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310147'},
         {'nome': 'MELANCIA BABY KG', 'unidade_fracionada': 'KG', 'codigo_interno': '322436'},
         {'nome': 'MELANCIA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310148'},
-        {'nome': 'UVA VITÓRIA BANDEJA', 'unidade_fracionada': 'UN', 'codigo_interno': '375055'},
+        {'nome': 'UVA PRETA S SEMENTE 500G', 'unidade_fracionada': 'UN', 'codigo_interno': '368980'},
     ],
     "SÁBADO": [
         {'nome': 'ABACAXI UNID. GRAUDO', 'unidade_fracionada': 'UN', 'codigo_interno': '311283'},
