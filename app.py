@@ -1,5 +1,3 @@
-# app.py
-
 import sqlite3
 import pandas as pd
 import numpy as np
@@ -423,6 +421,42 @@ def exportar_pedido_pdf():
     response.headers.set('Content-Type', 'application/pdf')
     response.headers.set('Content-Disposition', 'attachment', filename=nome_arquivo)
     return response
+
+# --- ROTA "RECEPTOR" PARA A API DE CUSTOS ---
+@app.route('/api/update-costs', methods=['POST'])
+@api_key_required
+def update_costs():
+    data = request.json
+    if not data or 'costs' not in data:
+        return jsonify({"message": "Dados inválidos."}), 400
+
+    costs_list = data['costs']
+    db = get_db()
+    cursor = db.cursor()
+    db_url = os.environ.get('DATABASE_URL')
+    
+    updates = 0
+    try:
+        for item in costs_list:
+            codigo = item.get('codigo_interno')
+            # O custo vem do script local já dividido por 100
+            custo = item.get('custo')
+            if codigo and custo is not None:
+                if db_url:
+                    cursor.execute("UPDATE products SET cost = %s WHERE codigo_interno = %s;", (custo, codigo))
+                else: # SQLite
+                    cursor.execute("UPDATE products SET cost = ? WHERE codigo_interno = ?;", (custo, codigo))
+                updates += cursor.rowcount
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Erro ao atualizar custos: {e}")
+        return jsonify({"message": "Ocorreu um erro durante a atualização."}), 500
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({"message": f"{updates} produtos tiveram seus custos atualizados com sucesso."}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
