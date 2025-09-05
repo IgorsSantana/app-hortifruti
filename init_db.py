@@ -1,9 +1,10 @@
-# init_db.py (Versão Robusta com verificação de duplicados)
+# init_db.py (Versão Final Robusta)
 import os
 import sqlite3
 import psycopg2
 from produtos_config import PRODUTOS
 
+# --- DEFINIÇÃO DOS USUÁRIOS ---
 USUARIOS = [
     ('bcs', 'bcs123', 'loja', 'BCS'),
     ('sjn', 'sjn123', 'loja', 'SJN'),
@@ -15,33 +16,29 @@ USUARIOS = [
     ('Gabriel', 'G1a2l', 'admin', None)
 ]
 
+# --- LÓGICA DE CONEXÃO E CRIAÇÃO ---
 db_url = os.environ.get('DATABASE_URL')
 is_postgres = bool(db_url)
 conn = psycopg2.connect(db_url) if is_postgres else sqlite3.connect('hortifruti.db')
 cur = conn.cursor()
 
+# --- COMANDOS SQL PARA CRIAR AS TABELAS ---
 SQL_TYPE = {
     "SERIAL_PK": "SERIAL PRIMARY KEY" if is_postgres else "INTEGER PRIMARY KEY AUTOINCREMENT",
     "TEXT_UNIQUE": "TEXT UNIQUE NOT NULL" if is_postgres else "TEXT UNIQUE NOT NULL",
     "INSERT_USER": 'INSERT INTO users (username, password, role, store_name) VALUES (%s, %s, %s, %s) ON CONFLICT (username) DO NOTHING;' if is_postgres else 'INSERT OR IGNORE INTO users (username, password, role, store_name) VALUES (?, ?, ?, ?);'
 }
-
 cur.execute(f'''CREATE TABLE IF NOT EXISTS pedidos (id {SQL_TYPE["SERIAL_PK"]}, data_pedido TEXT NOT NULL, loja TEXT NOT NULL, produto TEXT NOT NULL, tipo TEXT NOT NULL, quantidade INTEGER NOT NULL);''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS users (id {SQL_TYPE["SERIAL_PK"]}, username {SQL_TYPE["TEXT_UNIQUE"]}, password TEXT NOT NULL, role TEXT NOT NULL, store_name TEXT);''')
-cur.execute(f'''
-    CREATE TABLE IF NOT EXISTS products (
-        id {SQL_TYPE["SERIAL_PK"]},
-        name {SQL_TYPE["TEXT_UNIQUE"]},
-        unidade_fracionada TEXT NOT NULL,
-        codigo_interno TEXT UNIQUE,
-        cost NUMERIC(10, 2) DEFAULT 0.00 -- NOVA COLUNA ADICIONADA
-    );''')
+cur.execute(f'''CREATE TABLE IF NOT EXISTS products (id {SQL_TYPE["SERIAL_PK"]}, name {SQL_TYPE["TEXT_UNIQUE"]}, unidade_fracionada TEXT NOT NULL, codigo_interno TEXT UNIQUE, cost NUMERIC(10, 2) DEFAULT 0.00);''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS product_availability (product_id INTEGER NOT NULL, day_id INTEGER NOT NULL, PRIMARY KEY (product_id, day_id));''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS pedidos_finais (id {SQL_TYPE["SERIAL_PK"]}, data_pedido TEXT NOT NULL, produto_nome TEXT NOT NULL, loja_nome TEXT NOT NULL, quantidade_pedida INTEGER NOT NULL, UNIQUE (data_pedido, produto_nome, loja_nome));''')
 
+# --- LÓGICA PARA POPULAR AS TABELAS ---
 cur.executemany(SQL_TYPE["INSERT_USER"], USUARIOS)
 conn.commit()
 
+# --- LÓGICA DE CARGA DE PRODUTOS CORRIGIDA ---
 print("Limpando dados de produtos antigos...")
 cur.execute("DELETE FROM product_availability;")
 cur.execute("DELETE FROM products;")
@@ -49,28 +46,26 @@ cur.execute("DELETE FROM products;")
 print("Verificando e carregando produtos do arquivo de configuração...")
 DIAS_MAP = {"SEGUNDA-FEIRA": 0, "TERÇA-FEIRA": 1, "QUARTA-FEIRA": 2, "QUINTA-FEIRA": 3, "SEXTA-FEIRA": 4, "SÁBADO": 5}
 
-all_products_by_name = {}
+# 1. Criar uma lista mestra de produtos únicos, priorizando o código interno
+unique_products = {}
 for produtos_lista in PRODUTOS.values():
     for produto_dict in produtos_lista:
-        all_products_by_name[produto_dict['nome']] = produto_dict
+        codigo = produto_dict.get('codigo_interno')
+        nome = produto_dict.get('nome')
+        
+        # Usa o código como chave principal para evitar duplicatas
+        chave = codigo if codigo else nome
+        
+        if chave not in unique_products:
+            unique_products[chave] = produto_dict
+        else:
+            # Se já vimos esse código/nome, apenas garantimos que os dados são consistentes
+            if unique_products[chave]['nome'] != nome:
+                 print(f"ALERTA DE DADO INCONSISTENTE: Código '{codigo}' usado para '{nome}' e '{unique_products[chave]['nome']}'. Mantendo o primeiro.")
 
-codes_seen = {}
-products_to_insert = []
-for name, info in all_products_by_name.items():
-    code = info.get('codigo_interno')
-    if code and code != '':
-        if code in codes_seen:
-            print(f"\n--- ALERTA: CÓDIGO INTERNO DUPLICADO ENCONTRADO ---")
-            print(f"Código: '{code}'")
-            print(f"Produto Ignorado: '{name}'")
-            print(f"Produto já existente com este código: '{codes_seen[code]}'")
-            print(f"--------------------------------------------------\n")
-            continue
-        codes_seen[code] = name
-    products_to_insert.append(info)
-
-print(f"Inserindo {len(products_to_insert)} produtos únicos...")
-for produto_info in products_to_insert:
+# 2. Inserir cada produto único apenas uma vez
+print(f"Inserindo {len(unique_products)} produtos únicos...")
+for produto_info in unique_products.values():
     nome = produto_info['nome']
     unidade = produto_info['unidade_fracionada']
     codigo_interno = produto_info.get('codigo_interno')
@@ -80,6 +75,7 @@ for produto_info in products_to_insert:
     else:
         cur.execute("INSERT INTO products (name, unidade_fracionada, codigo_interno) VALUES (?, ?, ?);", (nome, unidade, codigo_interno))
 
+# 3. Vincular produtos aos dias da semana
 print("Criando vínculos de disponibilidade por dia...")
 for dia_nome, produtos_lista in PRODUTOS.items():
     if dia_nome not in DIAS_MAP: 
