@@ -1,4 +1,4 @@
-# produtos_config.py
+# produtos_config.py (Versão com dados padronizados)
 
 PRODUTOS = {
     "SEGUNDA-FEIRA": [
@@ -7,10 +7,9 @@ PRODUTOS = {
         {'nome': 'Maçã Fuji (Teste)', 'unidade_fracionada': 'KG', 'codigo_interno': '999991'}
     ],
     "QUINTA-FEIRA": [
-        {'nome': 'ABACAXI UNID. GRAUDO', 'unidade_fracionada': 'UN', 'codigo_interno': '311283'},
-        {'nome': 'ABACAXI UNID. MEDIO', 'unidade_fracionada': 'UN', 'codigo_interno': '352544'},
-        {'nome': 'ABOBORA KG BAIANA', 'unidade_fracionada': 'KG', 'codigo_interno': '310101'},
-        {'nome': 'ABOBRINHA VERDE KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310103'}
+        {'nome': 'PRODUTO TESTE QUINTA 1', 'unidade_fracionada': 'KG', 'codigo_interno': '888881'},
+        {'nome': 'PRODUTO TESTE QUINTA 2', 'unidade_fracionada': 'UN', 'codigo_interno': '888882'},
+        {'nome': 'PRODUTO TESTE QUINTA 3', 'unidade_fracionada': 'KG', 'codigo_interno': '888883'}
     ],
     "TERÇA-FEIRA": [
         {'nome': 'ABACATE KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310100'},
@@ -23,7 +22,7 @@ PRODUTOS = {
         {'nome': 'AMEIXA KG NACIONAL', 'unidade_fracionada': 'KG', 'codigo_interno': '340139'},
         {'nome': 'ATEMOIA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '350989'},
         {'nome': 'BANANA DA TERRA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310113'},
-        {'nome': 'BANANA MACA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310110'},
+        {'nome': 'BANANA MAÇÃ KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310110'},
         {'nome': 'BANANA NANICA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310178'},
         {'nome': 'BANANA OURO KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310111'},
         {'nome': 'BANANA PRATA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310112'},
@@ -47,24 +46,24 @@ PRODUTOS = {
         {'nome': 'LARANJA LIMA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310135'},
         {'nome': 'LARANJA PERA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310136'},
         {'nome': 'LIMA DA PERSIA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310180'},
-        {'nome': 'LIMAO KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310138'},
-        {'nome': 'LIMAO SICILIANO KG', 'unidade_fracionada': 'KG', 'codigo_interno': '334823'},
-        {'nome': 'MACA ARGENTINA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310174'},
-        {'nome': 'MACA FUJI KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310140'},
-        {'nome': 'MACA GALA NACIONAL KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310211'},
-        {'nome': 'MACA VERDE KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310139'},
-        {'nome': 'MAMAO AMAZONAS KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310142'},
-        {'nome': 'MAMAO FORMOSA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310175'},
+        {'nome': 'LIMÃO KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310138'},
+        {'nome': 'LIMÃO SICILIANO KG', 'unidade_fracionada': 'KG', 'codigo_interno': '334823'},
+        {'nome': 'MAÇÃ ARGENTINA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310174'},
+        {'nome': 'MAÇÃ FUJI KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310140'},
+        {'nome': 'MAÇÃ GALA NACIONAL KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310211'},
+        {'nome': 'MAÇÃ VERDE KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310139'},
+        {'nome': 'MAMÃO AMAZONAS KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310142'},
+        {'nome': 'MAMÃO FORMOSA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310175'},
         {'nome': 'MANDIOCA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310143'},
         {'nome': 'MANGA PALMER KG', 'unidade_fracionada': 'KG', 'codigo_interno': '375054'},
         {'nome': 'MANGA TOMMY KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310144'},
         {'nome': 'MANGA UBA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310146'},
-        {'nome': 'MARACUJA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310147'},
+        {'nome': 'MARACUJÁ KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310147'},
         {'nome': 'MELANCIA BABY KG', 'unidade_fracionada': 'KG', 'codigo_interno': '322436'},
         {'nome': 'MELANCIA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310148'},
-        {'nome': 'MELAO AMARELO KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310149'},
-        {'nome': 'MELAO REDINHA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '322437'},
-        {'nome': 'MELAO SAPIEL KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310240'},
+        {'nome': 'MELÃO AMARELO KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310149'},
+        {'nome': 'MELÃO REDINHA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '322437'},
+        {'nome': 'MELÃO SAPIEL KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310240'},
         {'nome': 'MEXERICA DEKOPON KG', 'unidade_fracionada': 'KG', 'codigo_interno': '374252'},
         {'nome': 'MEXERICA MORCOT KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310150'},
         {'nome': 'MEXERICA PONKAN KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310152'},
@@ -156,7 +155,7 @@ PRODUTOS = {
         {'nome': 'MARACUJÁ KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310147'},
         {'nome': 'MELANCIA BABY KG', 'unidade_fracionada': 'KG', 'codigo_interno': '322436'},
         {'nome': 'MELANCIA KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310148'},
-        {'nome': 'UVA VITÓRIA BANDEJA', 'unidade_fracionada': 'UN', 'codigo_interno': '375055'}, # CÓDIGO CORRIGIDO
+        {'nome': 'UVA VITÓRIA BANDEJA', 'unidade_fracionada': 'UN', 'codigo_interno': '375055'},
     ],
     "SÁBADO": [
         {'nome': 'ABACAXI UNID. GRAUDO', 'unidade_fracionada': 'UN', 'codigo_interno': '311283'},
