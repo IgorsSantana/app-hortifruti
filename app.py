@@ -38,13 +38,10 @@ def get_product_costs():
         db_port = os.environ.get('DB2_PORT')
         db_username = os.environ.get('DB2_USERNAME')
         db_password = os.environ.get('DB2_PASSWORD')
-
         if not all([db_database, db_hostname, db_port, db_username, db_password]):
             print("AVISO: Variaveis de ambiente do DB2 nao configuradas. Custos nao serao carregados.")
             return {}
-
         conn_str = f"DRIVER={{IBM DB2 ODBC DRIVER}};DATABASE={db_database};HOSTNAME={db_hostname};PORT={db_port};PROTOCOL=TCPIP;UID={db_username};PWD={db_password};"
-        
         with pyodbc.connect(conn_str, timeout=5) as cnxn:
             cursor = cnxn.cursor()
             sql_query = """
@@ -85,7 +82,7 @@ def get_products_for_day(day_id):
     db = get_db()
     cursor = db.cursor()
     db_url = os.environ.get('DATABASE_URL')
-    query = "SELECT p.id, p.name, p.unidade_fracionada, p.codigo_interno FROM products p JOIN product_availability pa ON p.id = pa.product_id WHERE pa.day_id = %s ORDER BY p.name;" if db_url else "SELECT p.id, p.name, p.unidade_fracionada, p.codigo_interno FROM products p JOIN product_availability pa ON p.id = pa.product_id WHERE pa.day_id = ? ORDER BY p.name;"
+    query = "SELECT p.id, p.name, p.unidade_fracionada, p.codigo_interno, p.cost FROM products p JOIN product_availability pa ON p.id = pa.product_id WHERE pa.day_id = %s ORDER BY p.name;" if db_url else "SELECT p.id, p.name, p.unidade_fracionada, p.codigo_interno, p.cost FROM products p JOIN product_availability pa ON p.id = pa.product_id WHERE pa.day_id = ? ORDER BY p.name;"
     cursor.execute(query, (day_id,))
     products_data = cursor.fetchall()
     products_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in products_data]
@@ -100,12 +97,20 @@ def obter_dados_relatorio():
     nome_dia = DIAS_PEDIDO[hoje_weekday]
     
     produtos_do_dia = get_products_for_day(hoje_weekday)
-    custos = get_product_costs()
-    for p in produtos_do_dia:
-        codigo = p.get('codigo_interno')
-        p['custo'] = custos.get(str(codigo), 0.0) / 100.0 if codigo else 0.0
+    
+    # Se estivermos rodando localmente (sem URL de DB), buscamos do DB2, senão, usamos o que está no banco
+    if not os.environ.get('DATABASE_URL'):
+        custos = get_product_costs()
+        for p in produtos_do_dia:
+            codigo = p.get('codigo_interno')
+            p['custo'] = custos.get(str(codigo), 0.0) / 100.0 if codigo else 0.0
+    else:
+        for p in produtos_do_dia:
+            p['custo'] = p.get('cost') or 0.0
+
     if not produtos_do_dia:
         return [], nome_dia
+
     produtos_do_dia_nomes = [p['nome'] for p in produtos_do_dia]
     db = get_db()
     hoje_str = datetime.now().strftime('%Y-%m-%d')
@@ -262,11 +267,7 @@ def relatorio():
     report_data, nome_dia = obter_dados_relatorio()
     if report_data is None:
         return "<h1>Hoje nao e um dia de pedido, portanto nao ha relatorio.</h1>"
-    
-    return render_template('relatorio.html', 
-                           report_data=report_data, 
-                           lojas=LOJAS,
-                           data_hoje=datetime.now().strftime('%d/%m/%Y'))
+    return render_template('relatorio.html', report_data=report_data, lojas=LOJAS, data_hoje=datetime.now().strftime('%d/%m/%Y'))
 
 @app.route('/salvar-pedido', methods=['POST'])
 @admin_required
