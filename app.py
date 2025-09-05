@@ -7,7 +7,7 @@ import psycopg2
 import os
 import pyodbc
 import json
-from flask import Flask, render_template, request, redirect, url_for, session, make_response, flash
+from flask import Flask, render_template, request, redirect, url_for, session, make_response, flash, jsonify
 from datetime import datetime
 from functools import wraps
 from fpdf import FPDF
@@ -30,39 +30,6 @@ def get_db():
         conn.row_factory = sqlite3.Row
         return conn
 
-def get_product_costs():
-    costs = {}
-    try:
-        db_database = os.environ.get('DB2_DATABASE')
-        db_hostname = os.environ.get('DB2_HOSTNAME')
-        db_port = os.environ.get('DB2_PORT')
-        db_username = os.environ.get('DB2_USERNAME')
-        db_password = os.environ.get('DB2_PASSWORD')
-        if not all([db_database, db_hostname, db_port, db_username, db_password]):
-            print("AVISO: Variaveis de ambiente do DB2 nao configuradas. Custos nao serao carregados.")
-            return {}
-        conn_str = f"DRIVER={{IBM DB2 ODBC DRIVER}};DATABASE={db_database};HOSTNAME={db_hostname};PORT={db_port};PROTOCOL=TCPIP;UID={db_username};PWD={db_password};"
-        with pyodbc.connect(conn_str, timeout=5) as cnxn:
-            cursor = cnxn.cursor()
-            sql_query = """
-                SELECT B.IDSUBPRODUTO AS CODIGO_INTERNO, CAST(E.CUSTOGERENCIAL AS DECIMAL(15,2)) AS CUSTO_GERENCIAL
-                FROM DBA.PRODUTO AS A
-                LEFT JOIN DBA.PRODUTO_GRADE AS B ON (A.IDPRODUTO = B.IDPRODUTO)
-                LEFT JOIN DBA.SECAO AS C ON (A.IDSECAO = C.IDSECAO)
-                LEFT JOIN DBA.PRODUTO_CADEIA_PRECO AS D ON (B.IDCADEIAPRECO = D.IDCADEIAPRECO)
-                LEFT JOIN DBA.POLITICA_PRECO_PRODUTO AS E ON (B.IDPRODUTO = E.IDPRODUTO AND B.IDSUBPRODUTO = E.IDSUBPRODUTO AND E.IDEMPRESA = 1)
-                WHERE B.FLAGINATIVO = 'F' AND B.FLAGBLOQUEIAVENDA = 'F' AND A.IDSECAO = 44 AND A.IDGRUPO <> 4410
-            """
-            cursor.execute(sql_query)
-            rows = cursor.fetchall()
-            for row in rows:
-                if row.CODIGO_INTERNO and row.CUSTO_GERENCIAL is not None:
-                    costs[str(row.CODIGO_INTERNO)] = float(row.CUSTO_GERENCIAL)
-            print(f"Sucesso: {len(costs)} custos carregados do DB2.")
-    except Exception as e:
-        print(f"ERRO AO CONECTAR COM O DB2: {e}")
-    return costs
-
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -76,6 +43,18 @@ def admin_required(f):
         if 'username' not in session: return redirect(url_for('login'))
         if session.get('role') != 'admin': return "Acesso negado.", 403
         return f(*args, **kwargs)
+    return decorated_function
+
+def api_key_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        api_key = os.environ.get('API_SECRET_KEY')
+        if not api_key:
+            return jsonify({"message": "Chave de API não configurada no servidor."}), 500
+        if request.headers.get('X-API-KEY') and request.headers.get('X-API-KEY') == api_key:
+            return f(*args, **kwargs)
+        else:
+            return jsonify({"message": "Chave de API inválida ou ausente."}), 401
     return decorated_function
 
 def get_products_for_day(day_id):
@@ -98,15 +77,8 @@ def obter_dados_relatorio():
     
     produtos_do_dia = get_products_for_day(hoje_weekday)
     
-    # Se estivermos rodando localmente (sem URL de DB), buscamos do DB2, senão, usamos o que está no banco
-    if not os.environ.get('DATABASE_URL'):
-        custos = get_product_costs()
-        for p in produtos_do_dia:
-            codigo = p.get('codigo_interno')
-            p['custo'] = custos.get(str(codigo), 0.0) / 100.0 if codigo else 0.0
-    else:
-        for p in produtos_do_dia:
-            p['custo'] = p.get('cost') or 0.0
+    for p in produtos_do_dia:
+        p['custo'] = p.get('cost') or 0.0
 
     if not produtos_do_dia:
         return [], nome_dia
