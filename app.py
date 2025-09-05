@@ -1,3 +1,5 @@
+# app.py
+
 import sqlite3
 import pandas as pd
 import numpy as np
@@ -422,7 +424,6 @@ def exportar_pedido_pdf():
     response.headers.set('Content-Disposition', 'attachment', filename=nome_arquivo)
     return response
 
-# --- ROTA "RECEPTOR" PARA A API DE CUSTOS ---
 @app.route('/api/update-costs', methods=['POST'])
 @api_key_required
 def update_costs():
@@ -439,7 +440,6 @@ def update_costs():
     try:
         for item in costs_list:
             codigo = item.get('codigo_interno')
-            # O custo vem do script local já dividido por 100
             custo = item.get('custo')
             if codigo and custo is not None:
                 if db_url:
