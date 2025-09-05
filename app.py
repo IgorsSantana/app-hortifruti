@@ -1,3 +1,5 @@
+# app.py
+
 import sqlite3
 import pandas as pd
 import numpy as np
@@ -36,10 +38,13 @@ def get_product_costs():
         db_port = os.environ.get('DB2_PORT')
         db_username = os.environ.get('DB2_USERNAME')
         db_password = os.environ.get('DB2_PASSWORD')
+
         if not all([db_database, db_hostname, db_port, db_username, db_password]):
             print("AVISO: Variaveis de ambiente do DB2 nao configuradas. Custos nao serao carregados.")
             return {}
+
         conn_str = f"DRIVER={{IBM DB2 ODBC DRIVER}};DATABASE={db_database};HOSTNAME={db_hostname};PORT={db_port};PROTOCOL=TCPIP;UID={db_username};PWD={db_password};"
+        
         with pyodbc.connect(conn_str, timeout=5) as cnxn:
             cursor = cnxn.cursor()
             sql_query = """
@@ -257,7 +262,11 @@ def relatorio():
     report_data, nome_dia = obter_dados_relatorio()
     if report_data is None:
         return "<h1>Hoje nao e um dia de pedido, portanto nao ha relatorio.</h1>"
-    return render_template('relatorio.html', report_data=report_data, lojas=LOJAS, data_hoje=datetime.now().strftime('%d/%m/%Y'))
+    
+    return render_template('relatorio.html', 
+                           report_data=report_data, 
+                           lojas=LOJAS,
+                           data_hoje=datetime.now().strftime('%d/%m/%Y'))
 
 @app.route('/salvar-pedido', methods=['POST'])
 @admin_required

@@ -28,7 +28,14 @@ SQL_TYPE = {
 
 cur.execute(f'''CREATE TABLE IF NOT EXISTS pedidos (id {SQL_TYPE["SERIAL_PK"]}, data_pedido TEXT NOT NULL, loja TEXT NOT NULL, produto TEXT NOT NULL, tipo TEXT NOT NULL, quantidade INTEGER NOT NULL);''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS users (id {SQL_TYPE["SERIAL_PK"]}, username {SQL_TYPE["TEXT_UNIQUE"]}, password TEXT NOT NULL, role TEXT NOT NULL, store_name TEXT);''')
-cur.execute(f'''CREATE TABLE IF NOT EXISTS products (id {SQL_TYPE["SERIAL_PK"]}, name {SQL_TYPE["TEXT_UNIQUE"]}, unidade_fracionada TEXT NOT NULL, codigo_interno TEXT UNIQUE);''')
+cur.execute(f'''
+    CREATE TABLE IF NOT EXISTS products (
+        id {SQL_TYPE["SERIAL_PK"]},
+        name {SQL_TYPE["TEXT_UNIQUE"]},
+        unidade_fracionada TEXT NOT NULL,
+        codigo_interno TEXT UNIQUE,
+        cost NUMERIC(10, 2) DEFAULT 0.00 -- NOVA COLUNA ADICIONADA
+    );''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS product_availability (product_id INTEGER NOT NULL, day_id INTEGER NOT NULL, PRIMARY KEY (product_id, day_id));''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS pedidos_finais (id {SQL_TYPE["SERIAL_PK"]}, data_pedido TEXT NOT NULL, produto_nome TEXT NOT NULL, loja_nome TEXT NOT NULL, quantidade_pedida INTEGER NOT NULL, UNIQUE (data_pedido, produto_nome, loja_nome));''')
 
