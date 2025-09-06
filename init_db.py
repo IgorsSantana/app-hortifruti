@@ -13,7 +13,8 @@ USUARIOS = [
     ('fcl2', 'fcl223', 'loja', 'FCL2'),
     ('fcl3', 'fcl323', 'loja', 'FCL3'),
     ('Igor', 'S4nt4n4', 'admin', None),
-    ('Gabriel', 'G1a2l', 'admin', None)
+    ('Gabriel', 'G1a2l', 'admin', None),
+    ('Paulo', 'paulo123', 'admin', None)
 ]
 
 # --- LÓGICA DE CONEXÃO E CRIAÇÃO ---
