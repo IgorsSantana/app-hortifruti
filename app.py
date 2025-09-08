@@ -8,7 +8,7 @@ import os
 import pyodbc
 import json
 from flask import Flask, render_template, request, redirect, url_for, session, make_response, flash, jsonify
-from datetime import datetime
+from datetime import datetime, date
 from functools import wraps
 from fpdf import FPDF
 
@@ -70,28 +70,32 @@ def get_products_for_day(day_id):
     db.close()
     return products_list
 
-def obter_dados_relatorio():
-    hoje_weekday = datetime.now().weekday()
-    if hoje_weekday not in DIAS_PEDIDO: return None, None
-    nome_dia = DIAS_PEDIDO[hoje_weekday]
+def obter_dados_relatorio(data_selecionada_str):
+    try:
+        data_obj = datetime.strptime(data_selecionada_str, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        data_obj = date.today()
     
-    produtos_do_dia = get_products_for_day(hoje_weekday)
+    dia_da_semana = data_obj.weekday()
+    if dia_da_semana not in DIAS_PEDIDO: return None, None, None
     
-    # A lógica de buscar custos do DB2 foi removida daqui, pois agora os custos estão no nosso banco
+    nome_dia = DIAS_PEDIDO[dia_da_semana]
+    produtos_do_dia = get_products_for_day(dia_da_semana)
+    
     for p in produtos_do_dia:
         p['custo'] = p.get('cost') or 0.0
 
     if not produtos_do_dia:
-        return [], nome_dia
+        return [], nome_dia, data_obj
 
     produtos_do_dia_nomes = [p['nome'] for p in produtos_do_dia]
     db = get_db()
-    hoje_str = datetime.now().strftime('%Y-%m-%d')
-    query_pedidos = f"SELECT produto, tipo, loja, quantidade FROM pedidos WHERE data_pedido = '{hoje_str}'"
+    query_pedidos = f"SELECT produto, tipo, loja, quantidade FROM pedidos WHERE data_pedido = '{data_selecionada_str}'"
     df_pedidos = pd.read_sql_query(query_pedidos, db)
+    
     db_url = os.environ.get('DATABASE_URL')
     query_pedidos_finais = "SELECT produto_nome, loja_nome, quantidade_pedida FROM pedidos_finais WHERE data_pedido = %s" if db_url else "SELECT produto_nome, loja_nome, quantidade_pedida FROM pedidos_finais WHERE data_pedido = ?"
-    df_pedidos_finais = pd.read_sql(query_pedidos_finais, db, params=(hoje_str,))
+    df_pedidos_finais = pd.read_sql(query_pedidos_finais, db, params=(data_selecionada_str,))
     db.close()
     
     df_caixas = df_pedidos[df_pedidos['tipo'] == 'Caixa']
@@ -120,15 +124,18 @@ def obter_dados_relatorio():
             produto_row["lojas"].append(loja_data)
         report_data.append(produto_row)
             
-    return report_data, nome_dia
+    return report_data, nome_dia, data_obj
 
 class PDF(FPDF):
+    def __init__(self, orientation='P', unit='mm', format='A4', data_pedido=''):
+        super().__init__(orientation, unit, format)
+        self.data_pedido = data_pedido
+
     def header(self):
         self.set_font('Arial', 'B', 15)
         self.cell(0, 10, 'Pedido de Hortifruti', 0, 1, 'C')
         self.set_font('Arial', '', 10)
-        data_hoje = datetime.now().strftime('%d/%m/%Y')
-        self.cell(0, 10, f'Pedido do Dia: {data_hoje}', 0, 1, 'C')
+        self.cell(0, 10, f'Pedido do Dia: {self.data_pedido}', 0, 1, 'C')
         self.ln(5)
 
 # --- ROTAS DA APLICAÇÃO ---
@@ -237,28 +244,35 @@ def sucesso():
 @app.route('/relatorio')
 @admin_required
 def relatorio():
-    report_data, nome_dia = obter_dados_relatorio()
+    data_selecionada = request.args.get('data', date.today().strftime('%Y-%m-%d'))
+    report_data, nome_dia, data_obj = obter_dados_relatorio(data_selecionada)
     if report_data is None:
-        return "<h1>Hoje nao e um dia de pedido, portanto nao ha relatorio.</h1>"
-    return render_template('relatorio.html', report_data=report_data, lojas=LOJAS, data_hoje=datetime.now().strftime('%d/%m/%Y'))
+        return render_template('relatorio_inativo.html', 
+                               data_selecionada=data_selecionada, 
+                               data_formatada=datetime.strptime(data_selecionada, '%Y-%m-%d').strftime('%d/%m/%Y'))
+    return render_template('relatorio.html', 
+                           report_data=report_data, 
+                           lojas=LOJAS,
+                           data_hoje=data_obj.strftime('%d/%m/%Y'),
+                           data_selecionada=data_selecionada)
 
 @app.route('/salvar-pedido', methods=['POST'])
 @admin_required
 def salvar_pedido():
     pedido_data_str = request.form.get('pedido_data')
+    data_do_pedido = request.form.get('data_pedido_form', date.today().strftime('%Y-%m-%d'))
     if not pedido_data_str:
         return {"status": "error", "message": "Nenhum dado recebido."}, 400
     pedidos = json.loads(pedido_data_str)
-    hoje_str = datetime.now().strftime('%Y-%m-%d')
     db = get_db()
     cursor = db.cursor()
     db_url = os.environ.get('DATABASE_URL')
     try:
         delete_query = "DELETE FROM pedidos_finais WHERE data_pedido = %s" if db_url else "DELETE FROM pedidos_finais WHERE data_pedido = ?"
-        cursor.execute(delete_query, (hoje_str,))
+        cursor.execute(delete_query, (data_do_pedido,))
         if pedidos:
             insert_query = "INSERT INTO pedidos_finais (data_pedido, produto_nome, loja_nome, quantidade_pedida) VALUES (%s, %s, %s, %s)" if db_url else "INSERT INTO pedidos_finais (data_pedido, produto_nome, loja_nome, quantidade_pedida) VALUES (?, ?, ?, ?)"
-            dados_para_inserir = [(hoje_str, p['produto'], p['loja'], int(p['pedido'])) for p in pedidos]
+            dados_para_inserir = [(data_do_pedido, p['produto'], p['loja'], int(p['pedido'])) for p in pedidos]
             cursor.executemany(insert_query, dados_para_inserir)
         db.commit()
         message = {"status": "success", "message": "Pedido salvo com sucesso!"}
@@ -389,13 +403,14 @@ def admin_delete_product(product_id):
 @admin_required
 def exportar_pedido_pdf():
     pedido_data_str = request.form.get('pedido_data')
+    data_do_pedido = request.form.get('data_pedido_pdf', date.today().strftime('%Y-%m-%d'))
     if not pedido_data_str:
         return "Nenhum dado de pedido recebido.", 400
     pedidos = json.loads(pedido_data_str)
     df = pd.DataFrame(pedidos)
     tabela_pedido = pd.pivot_table(df, values='pedido', index='produto', columns='loja', aggfunc='sum').fillna(0).astype(int)
     tabela_pedido = tabela_pedido.reindex(columns=LOJAS).fillna(0).astype(int)
-    pdf = PDF(orientation='P', unit='mm', format='A4')
+    pdf = PDF(orientation='P', unit='mm', format='A4', data_pedido=datetime.strptime(data_do_pedido, "%Y-%m-%d").strftime("%d/%m/%Y"))
     pdf.add_page()
     pdf.set_font('Arial', size=9)
     col_widths = [75] + [18] * len(tabela_pedido.columns)
@@ -416,8 +431,7 @@ def exportar_pedido_pdf():
             display_value = str(value) if value > 0 else ''
             pdf.cell(col_widths[i+1], line_height, display_value, border=1, align='C')
         pdf.ln(line_height)
-    data_hoje_str = datetime.now().strftime('%d-%m-%Y')
-    nome_arquivo = f'pedido_hortifruti_{data_hoje_str}.pdf'
+    nome_arquivo = f'pedido_hortifruti_{datetime.strptime(data_do_pedido, "%Y-%m-%d").strftime("%d-%m-%Y")}.pdf'
     pdf_output = pdf.output()
     final_pdf_bytes = bytes(pdf_output)
     response = make_response(final_pdf_bytes)
