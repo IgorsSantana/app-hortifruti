@@ -19,7 +19,7 @@ DATABASE = 'hortifruti.db'
 DIAS_PEDIDO = {0: "SEGUNDA-FEIRA", 1: "TERÇA-FEIRA", 2: "QUARTA-FEIRA", 3: "QUINTA-FEIRA", 4: "SEXTA-FEIRA", 5: "SÁBADO"}
 LOJAS = ["BCS", "SJN", "MEP", "FCL1", "FCL2", "FCL3"]
 
-# --- FUNÇÕES DE CONEXÃO E AUXILIARES ---
+# --- FUNÇÕES DE CONEXÃO E DECORATORS ---
 
 def get_db():
     db_url = os.environ.get('DATABASE_URL')
@@ -56,6 +56,8 @@ def api_key_required(f):
         else:
             return jsonify({"message": "Chave de API inválida ou ausente."}), 401
     return decorated_function
+
+# --- FUNÇÕES AUXILIARES DE DADOS ---
 
 def get_products_for_day(day_id):
     db = get_db()
@@ -445,12 +447,10 @@ def update_costs():
     data = request.json
     if not data or 'costs' not in data:
         return jsonify({"message": "Dados inválidos."}), 400
-
     costs_list = data['costs']
     db = get_db()
     cursor = db.cursor()
     db_url = os.environ.get('DATABASE_URL')
-    
     updates = 0
     try:
         for item in costs_list:
@@ -470,7 +470,6 @@ def update_costs():
     finally:
         cursor.close()
         db.close()
-    
     return jsonify({"message": f"{updates} produtos tiveram seus custos atualizados com sucesso."}), 200
 
 if __name__ == '__main__':
