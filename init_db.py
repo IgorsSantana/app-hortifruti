@@ -45,7 +45,7 @@ cur.execute("DELETE FROM product_availability;")
 cur.execute("DELETE FROM products;")
 
 print("Verificando e carregando produtos do arquivo de configuração...")
-DIAS_MAP = {"SEGUNDA-FEIRA": 0, "TERÇA-FEIRA": 1, "QUARTA-FEIRA": 2, "QUINTA-FEIRA": 3, "SEXTA-FEIRA": 4, "SÁBADO": 5}
+DIAS_MAP = {"SEGUNDA-FEIRA": 0, "TERÇA-FEIRA": 1, "QUARTA-FEIRA": 2, "SEXTA-FEIRA": 3, "SÁBADO": 4}
 
 # 1. Criar uma lista mestra de produtos únicos, usando o nome como chave para evitar duplicatas
 all_products_by_name = {}

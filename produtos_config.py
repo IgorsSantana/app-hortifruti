@@ -6,11 +6,6 @@ PRODUTOS = {
         {'nome': 'Laranja Pera (Teste)', 'unidade_fracionada': 'KG', 'codigo_interno': '999993'},
         {'nome': 'Maçã Fuji (Teste)', 'unidade_fracionada': 'KG', 'codigo_interno': '999991'}
     ],
-    "QUINTA-FEIRA": [
-        {'nome': 'PRODUTO TESTE QUINTA 1', 'unidade_fracionada': 'KG', 'codigo_interno': '888881'},
-        {'nome': 'PRODUTO TESTE QUINTA 2', 'unidade_fracionada': 'UN', 'codigo_interno': '888882'},
-        {'nome': 'PRODUTO TESTE QUINTA 3', 'unidade_fracionada': 'KG', 'codigo_interno': '888883'}
-    ],
     "TERÇA-FEIRA": [
         {'nome': 'ABACATE KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310100'},
         {'nome': 'ABACAXI UNID. GRAUDO', 'unidade_fracionada': 'UN', 'codigo_interno': '311283'},
