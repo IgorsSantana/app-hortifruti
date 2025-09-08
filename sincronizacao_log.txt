@@ -1,0 +1,174 @@
+--- Log de Sincronizacao de Custos - 2025-09-08 10:14:14 ---
+
+Total de custos encontrados no DB2: 160
+Total de codigos correspondentes encontrados no app: 106
+Total de codigos NAO encontrados no app: 54
+
+--- DETALHES DA EXECUCAO ---
+Status do Envio: SUCESSO
+Resposta da API: 106 produtos tiveram seus custos atualizados com sucesso.
+
+
+--- Produtos com Custo ATUALIZADO ---
+Codigo: 310041 - Novo Custo: R$ 2.00
+Codigo: 310085 - Novo Custo: R$ 2.50
+Codigo: 310100 - Novo Custo: R$ 5.90
+Codigo: 310101 - Novo Custo: R$ 2.50
+Codigo: 310103 - Novo Custo: R$ 4.66
+Codigo: 310107 - Novo Custo: R$ 12.00
+Codigo: 340135 - Novo Custo: R$ 16.50
+Codigo: 310108 - Novo Custo: R$ 27.00
+Codigo: 310109 - Novo Custo: R$ 16.88
+Codigo: 340139 - Novo Custo: R$ 10.55
+Codigo: 310110 - Novo Custo: R$ 6.40
+Codigo: 310111 - Novo Custo: R$ 2.50
+Codigo: 310112 - Novo Custo: R$ 3.50
+Codigo: 310113 - Novo Custo: R$ 8.00
+Codigo: 310114 - Novo Custo: R$ 8.33
+Codigo: 310115 - Novo Custo: R$ 3.00
+Codigo: 310119 - Novo Custo: R$ 2.00
+Codigo: 310121 - Novo Custo: R$ 3.00
+Codigo: 310122 - Novo Custo: R$ 2.50
+Codigo: 310124 - Novo Custo: R$ 3.50
+Codigo: 310125 - Novo Custo: R$ 1.58
+Codigo: 310126 - Novo Custo: R$ 3.00
+Codigo: 310127 - Novo Custo: R$ 2.50
+Codigo: 310128 - Novo Custo: R$ 5.00
+Codigo: 310129 - Novo Custo: R$ 3.00
+Codigo: 310130 - Novo Custo: R$ 4.33
+Codigo: 310131 - Novo Custo: R$ 3.33
+Codigo: 310132 - Novo Custo: R$ 3.57
+Codigo: 310133 - Novo Custo: R$ 20.00
+Codigo: 310134 - Novo Custo: R$ 3.00
+Codigo: 310135 - Novo Custo: R$ 3.75
+Codigo: 310136 - Novo Custo: R$ 2.50
+Codigo: 310139 - Novo Custo: R$ 11.67
+Codigo: 310140 - Novo Custo: R$ 7.78
+Codigo: 310142 - Novo Custo: R$ 5.56
+Codigo: 310143 - Novo Custo: R$ 2.78
+Codigo: 310144 - Novo Custo: R$ 3.60
+Codigo: 310146 - Novo Custo: R$ 9.90
+Codigo: 310147 - Novo Custo: R$ 7.10
+Codigo: 310149 - Novo Custo: R$ 3.85
+Codigo: 310150 - Novo Custo: R$ 7.50
+Codigo: 310151 - Novo Custo: R$ 8.50
+Codigo: 310152 - Novo Custo: R$ 3.90
+Codigo: 310153 - Novo Custo: R$ 1.00
+Codigo: 310154 - Novo Custo: R$ 3.89
+Codigo: 310155 - Novo Custo: R$ 3.89
+Codigo: 310156 - Novo Custo: R$ 7.22
+Codigo: 310158 - Novo Custo: R$ 15.50
+Codigo: 310159 - Novo Custo: R$ 15.55
+Codigo: 310160 - Novo Custo: R$ 7.00
+Codigo: 310161 - Novo Custo: R$ 4.50
+Codigo: 310162 - Novo Custo: R$ 1.67
+Codigo: 310163 - Novo Custo: R$ 3.33
+Codigo: 310165 - Novo Custo: R$ 4.17
+Codigo: 310166 - Novo Custo: R$ 13.75
+Codigo: 310167 - Novo Custo: R$ 14.37
+Codigo: 310169 - Novo Custo: R$ 11.87
+Codigo: 310170 - Novo Custo: R$ 9.00
+Codigo: 310171 - Novo Custo: R$ 13.60
+Codigo: 310172 - Novo Custo: R$ 10.83
+Codigo: 310173 - Novo Custo: R$ 3.50
+Codigo: 310174 - Novo Custo: R$ 9.00
+Codigo: 310175 - Novo Custo: R$ 3.50
+Codigo: 310180 - Novo Custo: R$ 6.25
+Codigo: 310181 - Novo Custo: R$ 32.90
+Codigo: 310211 - Novo Custo: R$ 8.22
+Codigo: 310214 - Novo Custo: R$ 4.88
+Codigo: 310221 - Novo Custo: R$ 89.90
+Codigo: 310237 - Novo Custo: R$ 3.00
+Codigo: 310240 - Novo Custo: R$ 5.70
+Codigo: 310244 - Novo Custo: R$ 59.00
+Codigo: 310289 - Novo Custo: R$ 16.50
+Codigo: 375105 - Novo Custo: R$ 3.00
+Codigo: 374252 - Novo Custo: R$ 4.66
+Codigo: 311283 - Novo Custo: R$ 6.00
+Codigo: 352544 - Novo Custo: R$ 6.00
+Codigo: 312655 - Novo Custo: R$ 6.50
+Codigo: 312952 - Novo Custo: R$ 20.00
+Codigo: 313507 - Novo Custo: R$ 3.00
+Codigo: 313634 - Novo Custo: R$ 29.00
+Codigo: 322345 - Novo Custo: R$ 12.50
+Codigo: 322361 - Novo Custo: R$ 15.00
+Codigo: 322436 - Novo Custo: R$ 3.67
+Codigo: 322437 - Novo Custo: R$ 11.50
+Codigo: 322470 - Novo Custo: R$ 8.33
+Codigo: 324846 - Novo Custo: R$ 5.50
+Codigo: 310178 - Novo Custo: R$ 4.10
+Codigo: 310138 - Novo Custo: R$ 2.00
+Codigo: 310148 - Novo Custo: R$ 1.90
+Codigo: 330115 - Novo Custo: R$ 7.64
+Codigo: 330803 - Novo Custo: R$ 7.75
+Codigo: 331637 - Novo Custo: R$ 6.50
+Codigo: 332166 - Novo Custo: R$ 12.50
+Codigo: 334535 - Novo Custo: R$ 4.44
+Codigo: 334823 - Novo Custo: R$ 2.50
+Codigo: 334824 - Novo Custo: R$ 8.99
+Codigo: 334978 - Novo Custo: R$ 6.66
+Codigo: 345140 - Novo Custo: R$ 4.44
+Codigo: 350989 - Novo Custo: R$ 13.33
+Codigo: 360434 - Novo Custo: R$ 2.70
+Codigo: 364058 - Novo Custo: R$ 15.71
+Codigo: 368980 - Novo Custo: R$ 4.80
+Codigo: 374794 - Novo Custo: R$ 5.75
+Codigo: 375054 - Novo Custo: R$ 2.40
+Codigo: 375291 - Novo Custo: R$ 7.50
+Codigo: 375418 - Novo Custo: R$ 7.50
+
+--- Produtos com Custo NAO ATUALIZADO (Codigo nao encontrado no app) ---
+Codigo do DB2: 353484
+Codigo do DB2: 353014
+Codigo do DB2: 368822
+Codigo do DB2: 335484
+Codigo do DB2: 340137
+Codigo do DB2: 335482
+Codigo do DB2: 352543
+Codigo do DB2: 348190
+Codigo do DB2: 310492
+Codigo do DB2: 310524
+Codigo do DB2: 311298
+Codigo do DB2: 311300
+Codigo do DB2: 311302
+Codigo do DB2: 311303
+Codigo do DB2: 311309
+Codigo do DB2: 311310
+Codigo do DB2: 311311
+Codigo do DB2: 311839
+Codigo do DB2: 312955
+Codigo do DB2: 324815
+Codigo do DB2: 324566
+Codigo do DB2: 325469
+Codigo do DB2: 327794
+Codigo do DB2: 323608
+Codigo do DB2: 347602
+Codigo do DB2: 375276
+Codigo do DB2: 329994
+Codigo do DB2: 330450
+Codigo do DB2: 327764
+Codigo do DB2: 340122
+Codigo do DB2: 375419
+Codigo do DB2: 338381
+Codigo do DB2: 342249
+Codigo do DB2: 345537
+Codigo do DB2: 349001
+Codigo do DB2: 351728
+Codigo do DB2: 353261
+Codigo do DB2: 365725
+Codigo do DB2: 373730
+Codigo do DB2: 373801
+Codigo do DB2: 373802
+Codigo do DB2: 373803
+Codigo do DB2: 374899
+Codigo do DB2: 374900
+Codigo do DB2: 374992
+Codigo do DB2: 374993
+Codigo do DB2: 374994
+Codigo do DB2: 375015
+Codigo do DB2: 375508
+Codigo do DB2: 375813
+Codigo do DB2: 376173
+Codigo do DB2: 376256
+Codigo do DB2: 376257
+Codigo do DB2: 376999

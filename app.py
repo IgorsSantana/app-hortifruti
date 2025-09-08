@@ -16,7 +16,7 @@ app = Flask(__name__)
 app.secret_key = 'chave-super-secreta-para-o-projeto-hortifruti'
 
 DATABASE = 'hortifruti.db'
-DIAS_PEDIDO = {0: "SEGUNDA-FEIRA", 1: "TERÇA-FEIRA", 2: "QUARTA-FEIRA", 3: "SEXTA-FEIRA", 4: "SÁBADO"}
+DIAS_PEDIDO = {0: "SEGUNDA-FEIRA", 1: "TERÇA-FEIRA", 2: "QUARTA-FEIRA", 3: "QUINTA-FEIRA", 4: "SEXTA-FEIRA", 5: "SÁBADO"}
 LOJAS = ["BCS", "SJN", "MEP", "FCL1", "FCL2", "FCL3"]
 
 # --- FUNÇÕES DE CONEXÃO E DECORATORS ---
