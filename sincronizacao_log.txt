@@ -1,4 +1,4 @@
---- Log de Sincronizacao de Custos - 2025-09-08 10:14:14 ---
+--- Log de Sincronizacao de Custos - 2025-09-09 15:57:46 ---
 
 Total de custos encontrados no DB2: 160
 Total de codigos correspondentes encontrados no app: 106

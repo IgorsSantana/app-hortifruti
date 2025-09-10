@@ -66,8 +66,8 @@
                     <table class="table table-bordered" id="relatorio-tabela">
                         <thead class="table-dark">
                             <tr>
-                                <th rowspan="2" style="width: 25%;">Produto</th>
-                                <th rowspan="2" style="width: 10%;">Custo</th>
+                                <th rowspan="2" style="width: 20%;">Produto</th>
+                                <th rowspan="2" style="width: 5%;">Custo</th>
                                 {% for loja_nome in lojas %}
                                     <th colspan="3">{{ loja_nome }}</th>
                                 {% endfor %}
@@ -75,7 +75,7 @@
                             <tr>
                                 {% for loja_nome in lojas %}
                                     <th>Caixa</th>
-                                    <th>Fração</th>
+                                    <th>Un/Kg</th>
                                     <th>Pedido</th>
                                 {% endfor %}
                             </tr>

@@ -3,6 +3,7 @@ venv/
 
 # Ignorar os arquivos de cache do Python
 __pycache__/
+sincronizacao_log.txt
 
 # Ignorar arquivos de banco de dados SQLite
 *.db
