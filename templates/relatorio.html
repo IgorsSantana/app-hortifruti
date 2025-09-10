@@ -8,18 +8,38 @@
     <style>
         @page { size: tabloid; margin: 0cm; }
         @media print {
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .navbar, .botoes-acao, .header-card { display: none !important; }
-            .container-fluid { margin-top: 0 !important; max-width: 100%; padding: 0; }
-            .card { box-shadow: none !important; border: none !important; }
-            input { border: none !important; background-color: transparent !important; text-align: center !important;}
-            h1, h2, hr { display: none; }
-            .card-body { padding: 0 !important; }
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .navbar, .botoes-acao, .header-card {
+                display: none !important;
+            }
+            .container-fluid {
+                margin-top: 0 !important;
+                max-width: 100%;
+                padding: 0;
+            }
+            .card {
+                box-shadow: none !important;
+                border: none !important;
+            }
+            input {
+                border: none !important;
+                background-color: transparent !important;
+                text-align: center !important;
+            }
+            h1, h2, hr {
+                display: none;
+            }
+            .card-body {
+                padding: 0 !important;
+            }
         }
         #relatorio-tabela th, #relatorio-tabela td {
             text-align: center;
             vertical-align: middle;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             padding: 0.5rem;
         }
         #relatorio-tabela thead th {
@@ -66,7 +86,7 @@
                     <table class="table table-bordered" id="relatorio-tabela">
                         <thead class="table-dark">
                             <tr>
-                                <th rowspan="2" style="width: 20%;">Produto</th>
+                                <th rowspan="2" style="width: 15%;">Produto</th>
                                 <th rowspan="2" style="width: 5%;">Custo</th>
                                 {% for loja_nome in lojas %}
                                     <th colspan="3">{{ loja_nome }}</th>
@@ -74,9 +94,9 @@
                             </tr>
                             <tr>
                                 {% for loja_nome in lojas %}
-                                    <th>Caixa</th>
-                                    <th>Un/Kg</th>
-                                    <th>Pedido</th>
+                                    <th style="width: 3%;">Caixa</th>
+                                    <th style="width: 3%;">Un/Kg</th>
+                                    <th style="width: 6%;">Pedido</th>
                                 {% endfor %}
                             </tr>
                         </thead>
