@@ -1,11 +1,6 @@
 # produtos_config.py
 
 PRODUTOS = {
-    "SEGUNDA-FEIRA": [
-        {'nome': 'Banana Nanica (Teste)', 'unidade_fracionada': 'KG', 'codigo_interno': '999992'},
-        {'nome': 'Laranja Pera (Teste)', 'unidade_fracionada': 'KG', 'codigo_interno': '999993'},
-        {'nome': 'Maçã Fuji (Teste)', 'unidade_fracionada': 'KG', 'codigo_interno': '999991'}
-    ],
     "TERÇA-FEIRA": [
         {'nome': 'ABACATE KG', 'unidade_fracionada': 'KG', 'codigo_interno': '310100'},
         {'nome': 'ABACAXI UNID. GRAUDO', 'unidade_fracionada': 'UN', 'codigo_interno': '311283'},
