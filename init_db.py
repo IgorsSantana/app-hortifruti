@@ -34,15 +34,36 @@ cur.execute(f'''CREATE TABLE IF NOT EXISTS users (id {SQL_TYPE["SERIAL_PK"]}, us
 cur.execute(f'''CREATE TABLE IF NOT EXISTS products (id {SQL_TYPE["SERIAL_PK"]}, name {SQL_TYPE["TEXT_UNIQUE"]}, unidade_fracionada TEXT NOT NULL, codigo_interno TEXT UNIQUE, cost NUMERIC(10, 2) DEFAULT 0.00);''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS product_availability (product_id INTEGER NOT NULL, day_id INTEGER NOT NULL, PRIMARY KEY (product_id, day_id));''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS pedidos_finais (id {SQL_TYPE["SERIAL_PK"]}, data_pedido TEXT NOT NULL, produto_nome TEXT NOT NULL, loja_nome TEXT NOT NULL, quantidade_pedida INTEGER NOT NULL, UNIQUE (data_pedido, produto_nome, loja_nome));''')
+cur.execute('''CREATE TABLE IF NOT EXISTS dias_contagem (id ''' + SQL_TYPE["SERIAL_PK"] + ''', data_contagem DATE NOT NULL UNIQUE, ativo BOOLEAN DEFAULT TRUE, observacoes TEXT);''')
 
 # --- LÓGICA PARA POPULAR AS TABELAS ---
 cur.executemany(SQL_TYPE["INSERT_USER"], USUARIOS)
 conn.commit()
 
 # --- LÓGICA DE CARGA DE PRODUTOS CORRIGIDA ---
-print("Limpando dados de produtos antigos...")
-cur.execute("DELETE FROM product_availability;")
-cur.execute("DELETE FROM products;")
+# Verificar se estamos em ambiente de produção (Render)
+is_production = bool(os.environ.get('DATABASE_URL'))
+
+if not is_production:
+    print("Limpando dados de produtos antigos...")
+    cur.execute("DELETE FROM product_availability;")
+    cur.execute("DELETE FROM products;")
+else:
+    print("⚠️  Ambiente de produção detectado. Preservando dados existentes.")
+    # Verificar se já existem produtos
+    if is_postgres:
+        cur.execute("SELECT COUNT(*) FROM products;")
+    else:
+        cur.execute("SELECT COUNT(*) FROM products;")
+    product_count = cur.fetchone()[0]
+    
+    if product_count > 0:
+        print(f"✅ {product_count} produtos já existem no banco. Pulando recarga de produtos.")
+        conn.commit()
+        cur.close()
+        conn.close()
+        print("Banco de dados verificado com sucesso!")
+        exit(0)
 
 print("Verificando e carregando produtos do arquivo de configuração...")
 DIAS_MAP = {"SEGUNDA-FEIRA": 0, "TERÇA-FEIRA": 1, "QUARTA-FEIRA": 2, "SEXTA-FEIRA": 4, "SÁBADO": 5}

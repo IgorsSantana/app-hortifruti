@@ -401,6 +401,142 @@ def admin_delete_product(product_id):
         db.close()
     return redirect(url_for('admin_products'))
 
+# --- ROTAS PARA GERENCIAR DIAS DE CONTAGEM ---
+@app.route('/admin/dias-contagem')
+@admin_required
+def admin_dias_contagem():
+    db = get_db()
+    cursor = db.cursor()
+    db_url = os.environ.get('DATABASE_URL')
+    
+    # Buscar dias de contagem ordenados por data
+    query = "SELECT id, data_contagem, ativo, observacoes FROM dias_contagem ORDER BY data_contagem DESC;"
+    cursor.execute(query)
+    dias_data = cursor.fetchall()
+    dias_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in dias_data]
+    
+    cursor.close()
+    db.close()
+    return render_template('admin/dias_contagem.html', dias=dias_list)
+
+@app.route('/admin/dias-contagem/add', methods=['GET', 'POST'])
+@admin_required
+def admin_add_dia_contagem():
+    if request.method == 'POST':
+        data_contagem = request.form['data_contagem']
+        ativo = 'ativo' in request.form
+        observacoes = request.form.get('observacoes', '')
+        
+        db = get_db()
+        cursor = db.cursor()
+        db_url = os.environ.get('DATABASE_URL')
+        
+        try:
+            if db_url:
+                cursor.execute("INSERT INTO dias_contagem (data_contagem, ativo, observacoes) VALUES (%s, %s, %s);", 
+                             (data_contagem, ativo, observacoes))
+            else:
+                cursor.execute("INSERT INTO dias_contagem (data_contagem, ativo, observacoes) VALUES (?, ?, ?);", 
+                             (data_contagem, ativo, observacoes))
+            db.commit()
+            flash('Dia de contagem adicionado com sucesso!', 'success')
+        except Exception as e:
+            db.rollback()
+            if 'UNIQUE constraint failed' in str(e) or 'duplicate key value violates unique constraint' in str(e):
+                flash(f'Erro: Já existe uma contagem agendada para a data {data_contagem}.', 'danger')
+            else:
+                flash(f'Erro ao adicionar dia de contagem: {e}', 'danger')
+        finally:
+            cursor.close()
+            db.close()
+        return redirect(url_for('admin_dias_contagem'))
+    
+    return render_template('admin/dia_contagem_form.html', dia=None)
+
+@app.route('/admin/dias-contagem/edit/<int:dia_id>', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_dia_contagem(dia_id):
+    db = get_db()
+    cursor = db.cursor()
+    db_url = os.environ.get('DATABASE_URL')
+    
+    if request.method == 'POST':
+        data_contagem = request.form['data_contagem']
+        ativo = 'ativo' in request.form
+        observacoes = request.form.get('observacoes', '')
+        
+        try:
+            cursor.execute("UPDATE dias_contagem SET data_contagem = %s, ativo = %s, observacoes = %s WHERE id = %s;" if db_url else 
+                         "UPDATE dias_contagem SET data_contagem = ?, ativo = ?, observacoes = ? WHERE id = ?;", 
+                         (data_contagem, ativo, observacoes, dia_id))
+            db.commit()
+            flash('Dia de contagem atualizado com sucesso!', 'success')
+        except Exception as e:
+            db.rollback()
+            if 'UNIQUE constraint failed' in str(e) or 'duplicate key value violates unique constraint' in str(e):
+                flash(f'Erro: Já existe uma contagem agendada para a data {data_contagem}.', 'danger')
+            else:
+                flash(f'Erro ao atualizar dia de contagem: {e}', 'danger')
+        finally:
+            cursor.close()
+            db.close()
+        return redirect(url_for('admin_dias_contagem'))
+    
+    # Buscar dados do dia
+    cursor.execute("SELECT * FROM dias_contagem WHERE id = %s;" if db_url else "SELECT * FROM dias_contagem WHERE id = ?;", (dia_id,))
+    dia_data = cursor.fetchone()
+    dia = dict(zip([desc[0] for desc in cursor.description], dia_data))
+    
+    cursor.close()
+    db.close()
+    return render_template('admin/dia_contagem_form.html', dia=dia)
+
+@app.route('/admin/dias-contagem/delete/<int:dia_id>', methods=['POST'])
+@admin_required
+def admin_delete_dia_contagem(dia_id):
+    db = get_db()
+    cursor = db.cursor()
+    db_url = os.environ.get('DATABASE_URL')
+    
+    try:
+        cursor.execute("DELETE FROM dias_contagem WHERE id = %s;" if db_url else "DELETE FROM dias_contagem WHERE id = ?;", (dia_id,))
+        db.commit()
+        flash('Dia de contagem removido com sucesso!', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Erro ao remover dia de contagem: {e}', 'danger')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect(url_for('admin_dias_contagem'))
+
+@app.route('/admin/dias-contagem/toggle/<int:dia_id>', methods=['POST'])
+@admin_required
+def admin_toggle_dia_contagem(dia_id):
+    db = get_db()
+    cursor = db.cursor()
+    db_url = os.environ.get('DATABASE_URL')
+    
+    try:
+        # Buscar o status atual
+        cursor.execute("SELECT ativo FROM dias_contagem WHERE id = %s;" if db_url else "SELECT ativo FROM dias_contagem WHERE id = ?;", (dia_id,))
+        result = cursor.fetchone()
+        if result:
+            novo_status = not result[0]
+            cursor.execute("UPDATE dias_contagem SET ativo = %s WHERE id = %s;" if db_url else "UPDATE dias_contagem SET ativo = ? WHERE id = ?;", (novo_status, dia_id))
+            db.commit()
+            status_text = "ativado" if novo_status else "desativado"
+            flash(f'Dia de contagem {status_text} com sucesso!', 'success')
+        else:
+            flash('Dia de contagem não encontrado.', 'danger')
+    except Exception as e:
+        db.rollback()
+        flash(f'Erro ao alterar status: {e}', 'danger')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect(url_for('admin_dias_contagem'))
+
 @app.route('/exportar-pedido-pdf', methods=['POST'])
 @admin_required
 def exportar_pedido_pdf():
