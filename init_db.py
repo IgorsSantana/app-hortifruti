@@ -34,7 +34,7 @@ cur.execute(f'''CREATE TABLE IF NOT EXISTS users (id {SQL_TYPE["SERIAL_PK"]}, us
 cur.execute(f'''CREATE TABLE IF NOT EXISTS products (id {SQL_TYPE["SERIAL_PK"]}, name {SQL_TYPE["TEXT_UNIQUE"]}, unidade_fracionada TEXT NOT NULL, codigo_interno TEXT UNIQUE, cost NUMERIC(10, 2) DEFAULT 0.00);''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS product_availability (product_id INTEGER NOT NULL, day_id INTEGER NOT NULL, PRIMARY KEY (product_id, day_id));''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS pedidos_finais (id {SQL_TYPE["SERIAL_PK"]}, data_pedido TEXT NOT NULL, produto_nome TEXT NOT NULL, loja_nome TEXT NOT NULL, quantidade_pedida INTEGER NOT NULL, UNIQUE (data_pedido, produto_nome, loja_nome));''')
-cur.execute('''CREATE TABLE IF NOT EXISTS dias_contagem (id ''' + SQL_TYPE["SERIAL_PK"] + ''', data_contagem DATE NOT NULL UNIQUE, ativo BOOLEAN DEFAULT TRUE, observacoes TEXT);''')
+cur.execute('''CREATE TABLE IF NOT EXISTS dias_semana_config (dia_id INTEGER PRIMARY KEY, nome_dia TEXT NOT NULL, ativo BOOLEAN DEFAULT TRUE);''')
 
 # --- LÓGICA PARA POPULAR AS TABELAS ---
 cur.executemany(SQL_TYPE["INSERT_USER"], USUARIOS)
@@ -108,6 +108,21 @@ for dia_nome, produtos_lista in PRODUTOS.items():
                 cur.execute("INSERT OR IGNORE INTO product_availability (product_id, day_id) VALUES (?, ?);", (product_id, day_id))
 
 print("Carga de produtos concluída.")
+
+# --- CONFIGURAÇÃO DOS DIAS DA SEMANA ---
+print("Configurando dias da semana para contagem...")
+DIAS_SEMANA = {0: "SEGUNDA-FEIRA", 1: "TERÇA-FEIRA", 2: "QUARTA-FEIRA", 4: "SEXTA-FEIRA", 5: "SÁBADO"}
+
+# Inserir configuração dos dias da semana (todos ativos por padrão)
+for dia_id, nome_dia in DIAS_SEMANA.items():
+    if is_postgres:
+        cur.execute("INSERT INTO dias_semana_config (dia_id, nome_dia, ativo) VALUES (%s, %s, %s) ON CONFLICT (dia_id) DO NOTHING;", 
+                   (dia_id, nome_dia, True))
+    else:
+        cur.execute("INSERT OR IGNORE INTO dias_semana_config (dia_id, nome_dia, ativo) VALUES (?, ?, ?);", 
+                   (dia_id, nome_dia, True))
+
+print("Configuração dos dias da semana concluída.")
 conn.commit()
 cur.close()
 conn.close()

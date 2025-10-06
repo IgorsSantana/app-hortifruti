@@ -79,7 +79,20 @@ def obter_dados_relatorio(data_selecionada_str):
         data_obj = date.today()
     
     dia_da_semana = data_obj.weekday()
-    if dia_da_semana not in DIAS_PEDIDO: return None, None, None
+    
+    # Verificar se o dia da semana está ativo na configuração
+    db = get_db()
+    cursor = db.cursor()
+    db_url = os.environ.get('DATABASE_URL')
+    query = "SELECT ativo FROM dias_semana_config WHERE dia_id = %s;" if db_url else "SELECT ativo FROM dias_semana_config WHERE dia_id = ?;"
+    cursor.execute(query, (dia_da_semana,))
+    result = cursor.fetchone()
+    cursor.close()
+    db.close()
+    
+    # Se não encontrou na configuração ou está inativo, usar lógica antiga
+    if not result or not result[0]:
+        if dia_da_semana not in DIAS_PEDIDO: return None, None, None
     
     nome_dia = DIAS_PEDIDO[dia_da_semana]
     produtos_do_dia = get_products_for_day(dia_da_semana)
@@ -176,7 +189,21 @@ def index():
     hoje = datetime.now().weekday()
     loja_logada = session.get('store_name')
     if session.get('role') == 'admin': return redirect(url_for('relatorio'))
-    if hoje in DIAS_PEDIDO:
+    
+    # Verificar se o dia da semana está ativo na configuração
+    db = get_db()
+    cursor = db.cursor()
+    db_url = os.environ.get('DATABASE_URL')
+    query = "SELECT ativo FROM dias_semana_config WHERE dia_id = %s;" if db_url else "SELECT ativo FROM dias_semana_config WHERE dia_id = ?;"
+    cursor.execute(query, (hoje,))
+    result = cursor.fetchone()
+    cursor.close()
+    db.close()
+    
+    # Se não encontrou na configuração ou está inativo, usar lógica antiga
+    dia_ativo = result and result[0] if result else (hoje in DIAS_PEDIDO)
+    
+    if dia_ativo:
         nome_dia = DIAS_PEDIDO[hoje]
         produtos_do_dia = get_products_for_day(hoje)
         db = get_db()
@@ -409,8 +436,8 @@ def admin_dias_contagem():
     cursor = db.cursor()
     db_url = os.environ.get('DATABASE_URL')
     
-    # Buscar dias de contagem ordenados por data
-    query = "SELECT id, data_contagem, ativo, observacoes FROM dias_contagem ORDER BY data_contagem DESC;"
+    # Buscar configuração dos dias da semana
+    query = "SELECT dia_id, nome_dia, ativo FROM dias_semana_config ORDER BY dia_id;"
     cursor.execute(query)
     dias_data = cursor.fetchall()
     dias_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in dias_data]
@@ -419,96 +446,7 @@ def admin_dias_contagem():
     db.close()
     return render_template('admin/dias_contagem.html', dias=dias_list)
 
-@app.route('/admin/dias-contagem/add', methods=['GET', 'POST'])
-@admin_required
-def admin_add_dia_contagem():
-    if request.method == 'POST':
-        data_contagem = request.form['data_contagem']
-        ativo = 'ativo' in request.form
-        observacoes = request.form.get('observacoes', '')
-        
-        db = get_db()
-        cursor = db.cursor()
-        db_url = os.environ.get('DATABASE_URL')
-        
-        try:
-            if db_url:
-                cursor.execute("INSERT INTO dias_contagem (data_contagem, ativo, observacoes) VALUES (%s, %s, %s);", 
-                             (data_contagem, ativo, observacoes))
-            else:
-                cursor.execute("INSERT INTO dias_contagem (data_contagem, ativo, observacoes) VALUES (?, ?, ?);", 
-                             (data_contagem, ativo, observacoes))
-            db.commit()
-            flash('Dia de contagem adicionado com sucesso!', 'success')
-        except Exception as e:
-            db.rollback()
-            if 'UNIQUE constraint failed' in str(e) or 'duplicate key value violates unique constraint' in str(e):
-                flash(f'Erro: Já existe uma contagem agendada para a data {data_contagem}.', 'danger')
-            else:
-                flash(f'Erro ao adicionar dia de contagem: {e}', 'danger')
-        finally:
-            cursor.close()
-            db.close()
-        return redirect(url_for('admin_dias_contagem'))
-    
-    return render_template('admin/dia_contagem_form.html', dia=None)
-
-@app.route('/admin/dias-contagem/edit/<int:dia_id>', methods=['GET', 'POST'])
-@admin_required
-def admin_edit_dia_contagem(dia_id):
-    db = get_db()
-    cursor = db.cursor()
-    db_url = os.environ.get('DATABASE_URL')
-    
-    if request.method == 'POST':
-        data_contagem = request.form['data_contagem']
-        ativo = 'ativo' in request.form
-        observacoes = request.form.get('observacoes', '')
-        
-        try:
-            cursor.execute("UPDATE dias_contagem SET data_contagem = %s, ativo = %s, observacoes = %s WHERE id = %s;" if db_url else 
-                         "UPDATE dias_contagem SET data_contagem = ?, ativo = ?, observacoes = ? WHERE id = ?;", 
-                         (data_contagem, ativo, observacoes, dia_id))
-            db.commit()
-            flash('Dia de contagem atualizado com sucesso!', 'success')
-        except Exception as e:
-            db.rollback()
-            if 'UNIQUE constraint failed' in str(e) or 'duplicate key value violates unique constraint' in str(e):
-                flash(f'Erro: Já existe uma contagem agendada para a data {data_contagem}.', 'danger')
-            else:
-                flash(f'Erro ao atualizar dia de contagem: {e}', 'danger')
-        finally:
-            cursor.close()
-            db.close()
-        return redirect(url_for('admin_dias_contagem'))
-    
-    # Buscar dados do dia
-    cursor.execute("SELECT * FROM dias_contagem WHERE id = %s;" if db_url else "SELECT * FROM dias_contagem WHERE id = ?;", (dia_id,))
-    dia_data = cursor.fetchone()
-    dia = dict(zip([desc[0] for desc in cursor.description], dia_data))
-    
-    cursor.close()
-    db.close()
-    return render_template('admin/dia_contagem_form.html', dia=dia)
-
-@app.route('/admin/dias-contagem/delete/<int:dia_id>', methods=['POST'])
-@admin_required
-def admin_delete_dia_contagem(dia_id):
-    db = get_db()
-    cursor = db.cursor()
-    db_url = os.environ.get('DATABASE_URL')
-    
-    try:
-        cursor.execute("DELETE FROM dias_contagem WHERE id = %s;" if db_url else "DELETE FROM dias_contagem WHERE id = ?;", (dia_id,))
-        db.commit()
-        flash('Dia de contagem removido com sucesso!', 'success')
-    except Exception as e:
-        db.rollback()
-        flash(f'Erro ao remover dia de contagem: {e}', 'danger')
-    finally:
-        cursor.close()
-        db.close()
-    return redirect(url_for('admin_dias_contagem'))
+# Removidas rotas desnecessárias - apenas ativar/desativar dias da semana
 
 @app.route('/admin/dias-contagem/toggle/<int:dia_id>', methods=['POST'])
 @admin_required
@@ -519,16 +457,17 @@ def admin_toggle_dia_contagem(dia_id):
     
     try:
         # Buscar o status atual
-        cursor.execute("SELECT ativo FROM dias_contagem WHERE id = %s;" if db_url else "SELECT ativo FROM dias_contagem WHERE id = ?;", (dia_id,))
+        cursor.execute("SELECT ativo, nome_dia FROM dias_semana_config WHERE dia_id = %s;" if db_url else "SELECT ativo, nome_dia FROM dias_semana_config WHERE dia_id = ?;", (dia_id,))
         result = cursor.fetchone()
         if result:
-            novo_status = not result[0]
-            cursor.execute("UPDATE dias_contagem SET ativo = %s WHERE id = %s;" if db_url else "UPDATE dias_contagem SET ativo = ? WHERE id = ?;", (novo_status, dia_id))
+            ativo_atual, nome_dia = result[0], result[1]
+            novo_status = not ativo_atual
+            cursor.execute("UPDATE dias_semana_config SET ativo = %s WHERE dia_id = %s;" if db_url else "UPDATE dias_semana_config SET ativo = ? WHERE dia_id = ?;", (novo_status, dia_id))
             db.commit()
             status_text = "ativado" if novo_status else "desativado"
-            flash(f'Dia de contagem {status_text} com sucesso!', 'success')
+            flash(f'{nome_dia} {status_text} com sucesso!', 'success')
         else:
-            flash('Dia de contagem não encontrado.', 'danger')
+            flash('Dia da semana não encontrado.', 'danger')
     except Exception as e:
         db.rollback()
         flash(f'Erro ao alterar status: {e}', 'danger')

@@ -1,2 +1,2 @@
 # Procfile - Configuração para o Render
-web: python migrate_db.py && gunicorn app:app
+web: python fix_dias_semana.py && gunicorn app:app
