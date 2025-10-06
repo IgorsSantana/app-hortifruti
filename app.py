@@ -203,9 +203,14 @@ def index():
     # Se não encontrou na configuração ou está inativo, usar lógica antiga
     dia_ativo = result and result[0] if result else (hoje in DIAS_PEDIDO)
     
-    # Se o dia não está ativo, mostrar tela inativa para todos
+    # Se o dia não está ativo, mostrar tela inativa baseada no tipo de usuário
     if not dia_ativo:
-        return render_template('inativo.html')
+        if session.get('role') == 'admin':
+            return render_template('relatorio_inativo.html', 
+                                   data_selecionada=datetime.now().strftime('%Y-%m-%d'),
+                                   data_formatada=datetime.now().strftime('%d/%m/%Y'))
+        else:
+            return render_template('inativo.html')
     
     # Se é admin e o dia está ativo, ir para relatório
     if session.get('role') == 'admin': 
