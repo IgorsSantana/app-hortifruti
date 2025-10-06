@@ -59,10 +59,22 @@ else:
     
     if product_count > 0:
         print(f"✅ {product_count} produtos já existem no banco. Pulando recarga de produtos.")
+        # Apenas configurar dias da semana e sair
+        print("Configurando apenas dias da semana...")
+        DIAS_SEMANA = {0: "SEGUNDA-FEIRA", 1: "TERÇA-FEIRA", 2: "QUARTA-FEIRA", 4: "SEXTA-FEIRA", 5: "SÁBADO"}
+        
+        for dia_id, nome_dia in DIAS_SEMANA.items():
+            if is_postgres:
+                cur.execute("INSERT INTO dias_semana_config (dia_id, nome_dia, ativo) VALUES (%s, %s, %s) ON CONFLICT (dia_id) DO NOTHING;", 
+                           (dia_id, nome_dia, True))
+            else:
+                cur.execute("INSERT OR IGNORE INTO dias_semana_config (dia_id, nome_dia, ativo) VALUES (?, ?, ?);", 
+                           (dia_id, nome_dia, True))
+        
         conn.commit()
         cur.close()
         conn.close()
-        print("Banco de dados verificado com sucesso!")
+        print("Banco de dados verificado e dias da semana configurados com sucesso!")
         exit(0)
 
 print("Verificando e carregando produtos do arquivo de configuração...")
