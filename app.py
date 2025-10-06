@@ -92,7 +92,8 @@ def obter_dados_relatorio(data_selecionada_str):
     
     # Se não encontrou na configuração ou está inativo, usar lógica antiga
     if not result or not result[0]:
-        if dia_da_semana not in DIAS_PEDIDO: return None, None, None
+        if dia_da_semana not in DIAS_PEDIDO: 
+            return "INATIVO", None, None
     
     nome_dia = DIAS_PEDIDO[dia_da_semana]
     produtos_do_dia = get_products_for_day(dia_da_semana)
@@ -188,7 +189,6 @@ def logout():
 def index():
     hoje = datetime.now().weekday()
     loja_logada = session.get('store_name')
-    if session.get('role') == 'admin': return redirect(url_for('relatorio'))
     
     # Verificar se o dia da semana está ativo na configuração
     db = get_db()
@@ -203,6 +203,15 @@ def index():
     # Se não encontrou na configuração ou está inativo, usar lógica antiga
     dia_ativo = result and result[0] if result else (hoje in DIAS_PEDIDO)
     
+    # Se o dia não está ativo, mostrar tela inativa para todos
+    if not dia_ativo:
+        return render_template('inativo.html')
+    
+    # Se é admin e o dia está ativo, ir para relatório
+    if session.get('role') == 'admin': 
+        return redirect(url_for('relatorio'))
+    
+    # Se é usuário normal e o dia está ativo, mostrar contagem
     if dia_ativo:
         nome_dia = DIAS_PEDIDO[hoje]
         produtos_do_dia = get_products_for_day(hoje)
@@ -275,10 +284,20 @@ def sucesso():
 def relatorio():
     data_selecionada = request.args.get('data', date.today().strftime('%Y-%m-%d'))
     report_data, nome_dia, data_obj = obter_dados_relatorio(data_selecionada)
+    
+    # Se o dia está inativo na configuração
+    if report_data == "INATIVO":
+        return render_template('relatorio_inativo.html', 
+                               data_selecionada=data_selecionada, 
+                               data_formatada=datetime.strptime(data_selecionada, '%Y-%m-%d').strftime('%d/%m/%Y'))
+    
+    # Se não há dados (dia não está no DIAS_PEDIDO)
     if report_data is None:
         return render_template('relatorio_inativo.html', 
                                data_selecionada=data_selecionada, 
                                data_formatada=datetime.strptime(data_selecionada, '%Y-%m-%d').strftime('%d/%m/%Y'))
+    
+    # Se há dados, mostrar relatório normal
     return render_template('relatorio.html', 
                            report_data=report_data, 
                            lojas=LOJAS,
