@@ -12,7 +12,7 @@ from datetime import datetime, date
 from functools import wraps
 from fpdf import FPDF
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 app.secret_key = 'chave-super-secreta-para-o-projeto-hortifruti'
 
 DATABASE = 'hortifruti.db'
