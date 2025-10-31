@@ -130,6 +130,7 @@
             margin-top: 0.5rem;
             background: white;
             min-width: 200px;
+            max-width: 250px;
         }
 
         .dropdown-item {
@@ -137,6 +138,7 @@
             color: var(--dark-color);
             transition: var(--transition);
             border-radius: 0;
+            white-space: nowrap;
         }
 
         .dropdown-item:hover {
@@ -148,6 +150,59 @@
         .dropdown-divider {
             margin: 0.5rem 0;
             border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Mobile adjustments for dropdown */
+        @media (max-width: 991.98px) {
+            .user-profile {
+                position: relative !important;
+            }
+
+            .dropdown-menu {
+                position: absolute !important;
+                right: 0 !important;
+                left: auto !important;
+                transform: translateX(0) !important;
+                max-width: calc(100vw - 2rem);
+                margin-top: 0.5rem;
+                z-index: 1050;
+            }
+
+            .dropdown-menu-end {
+                right: 0 !important;
+                left: auto !important;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .user-profile {
+                position: relative !important;
+                margin-left: auto;
+            }
+
+            .dropdown-menu {
+                position: fixed !important;
+                right: 1rem !important;
+                left: auto !important;
+                min-width: 180px;
+                max-width: calc(100vw - 2rem);
+                z-index: 1055;
+                margin-top: 0.5rem;
+            }
+
+            /* Garantir que o dropdown não saia da tela no mobile */
+            .dropdown.show .dropdown-menu {
+                max-height: calc(100vh - 100px);
+                overflow-y: auto;
+            }
+        }
+
+        /* Ajuste para garantir visibilidade em todos os tamanhos */
+        @media (max-width: 400px) {
+            .dropdown-menu {
+                right: 0.5rem !important;
+                max-width: calc(100vw - 1rem);
+            }
         }
 
         /* Mobile Menu */
@@ -177,6 +232,9 @@
             .user-profile {
                 margin-top: 1rem;
                 text-align: center;
+                display: flex;
+                justify-content: center;
+                align-items: center;
             }
         }
 
@@ -314,16 +372,16 @@
                 </ul>
 
                 <!-- User Profile & Actions -->
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center ms-auto">
                     {% if session.username %}
                     <!-- User Profile Dropdown -->
-                    <div class="dropdown user-profile">
-                        <button class="btn btn-link text-decoration-none p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="dropdown user-profile position-relative">
+                        <button class="btn btn-link text-decoration-none p-0" type="button" id="userProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
                             <div class="user-avatar">
                                 {{ session.username[0].upper() }}
                             </div>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
+                        <ul class="dropdown-menu dropdown-menu-end position-absolute" id="profileDropdownMenu" aria-labelledby="userProfileDropdown">
                             <li class="dropdown-header">
                                 <div class="d-flex align-items-center">
                                     <div class="user-avatar me-2" style="width: 30px; height: 30px; font-size: 0.9rem;">
@@ -429,6 +487,90 @@
                 }
             });
         });
+
+        // Ajustar posicionamento do dropdown de perfil no mobile
+        const userProfileDropdown = document.getElementById('userProfileDropdown');
+        const profileDropdownMenu = document.getElementById('profileDropdownMenu');
+        
+        if (userProfileDropdown && profileDropdownMenu) {
+            function adjustDropdownPosition() {
+                if (window.innerWidth <= 991) {
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    const buttonRect = userProfileDropdown.getBoundingClientRect();
+                    
+                    // Resetar estilos primeiro
+                    profileDropdownMenu.style.removeProperty('right');
+                    profileDropdownMenu.style.removeProperty('left');
+                    profileDropdownMenu.style.removeProperty('bottom');
+                    profileDropdownMenu.style.removeProperty('top');
+                    profileDropdownMenu.style.removeProperty('margin-bottom');
+                    profileDropdownMenu.style.removeProperty('margin-top');
+                    profileDropdownMenu.style.removeProperty('transform');
+                    
+                    // Aguardar renderização completa
+                    requestAnimationFrame(() => {
+                        const menuRect = profileDropdownMenu.getBoundingClientRect();
+                        let needsAdjustment = false;
+                        
+                        // Verificar se o dropdown sairia da tela à direita
+                        if (menuRect.right > viewportWidth) {
+                            profileDropdownMenu.style.right = '0';
+                            profileDropdownMenu.style.left = 'auto';
+                            profileDropdownMenu.style.transform = 'translateX(0)';
+                            needsAdjustment = true;
+                        }
+                        
+                        // Verificar se o dropdown sairia da tela embaixo
+                        if (menuRect.bottom > viewportHeight - 10) {
+                            profileDropdownMenu.style.bottom = '100%';
+                            profileDropdownMenu.style.top = 'auto';
+                            profileDropdownMenu.style.marginBottom = '0.5rem';
+                            profileDropdownMenu.style.marginTop = '0';
+                            needsAdjustment = true;
+                        }
+                        
+                        // Verificar se o dropdown sairia da tela à esquerda
+                        if (menuRect.left < 0) {
+                            profileDropdownMenu.style.left = '1rem';
+                            profileDropdownMenu.style.right = 'auto';
+                            profileDropdownMenu.style.transform = 'translateX(0)';
+                            needsAdjustment = true;
+                        }
+                        
+                        // Se nenhum ajuste foi necessário, garantir que está alinhado à direita
+                        if (!needsAdjustment && window.innerWidth <= 576) {
+                            profileDropdownMenu.style.right = '1rem';
+                            profileDropdownMenu.style.left = 'auto';
+                        }
+                    });
+                }
+            }
+            
+            userProfileDropdown.addEventListener('shown.bs.dropdown', adjustDropdownPosition);
+            
+            // Resetar posições quando o dropdown fechar
+            userProfileDropdown.addEventListener('hidden.bs.dropdown', function () {
+                profileDropdownMenu.style.removeProperty('right');
+                profileDropdownMenu.style.removeProperty('left');
+                profileDropdownMenu.style.removeProperty('bottom');
+                profileDropdownMenu.style.removeProperty('top');
+                profileDropdownMenu.style.removeProperty('margin-bottom');
+                profileDropdownMenu.style.removeProperty('margin-top');
+                profileDropdownMenu.style.removeProperty('transform');
+            });
+            
+            // Ajustar ao redimensionar a janela
+            let resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    if (profileDropdownMenu.classList.contains('show')) {
+                        adjustDropdownPosition();
+                    }
+                }, 100);
+            });
+        }
     </script>
     
     {% block extra_js %}{% endblock %}
