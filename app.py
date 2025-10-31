@@ -17,7 +17,7 @@ app.secret_key = 'chave-super-secreta-para-o-projeto-hortifruti'
 
 DATABASE = 'hortifruti.db'
 DIAS_PEDIDO = {0: "SEGUNDA-FEIRA", 1: "TERÇA-FEIRA", 2: "QUARTA-FEIRA", 4: "SEXTA-FEIRA", 5: "SÁBADO"}
-LOJAS = ["BCS", "SJN", "FCL2", "MEP", "FCL3"]
+LOJAS = ["BCS", "SJN", "FCL2", "MEP", "FCL3", "FCL4"]
 
 # --- FUNÇÕES DE CONEXÃO E DECORATORS ---
 
@@ -471,6 +471,33 @@ def admin_dias_contagem():
     return render_template('admin/dias_contagem.html', dias=dias_list)
 
 # Removidas rotas desnecessárias - apenas ativar/desativar dias da semana
+
+@app.route('/admin/lojas')
+@admin_required
+def admin_lojas():
+    """Lista todas as lojas e seus usuários"""
+    db = get_db()
+    cursor = db.cursor()
+    db_url = os.environ.get('DATABASE_URL')
+    
+    # Buscar todos os usuários de loja
+    query = "SELECT username, store_name, role FROM users WHERE role = 'loja' ORDER BY store_name;"
+    cursor.execute(query)
+    users_data = cursor.fetchall()
+    users_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in users_data]
+    
+    cursor.close()
+    db.close()
+    
+    # Criar dicionário de lojas com seus usuários
+    lojas_dict = {}
+    for loja_nome in LOJAS:
+        lojas_dict[loja_nome] = {
+            'nome': loja_nome,
+            'usuarios': [u for u in users_list if u['store_name'] == loja_nome]
+        }
+    
+    return render_template('admin/lojas.html', lojas=lojas_dict, todas_lojas=LOJAS)
 
 @app.route('/admin/dias-contagem/toggle/<int:dia_id>', methods=['POST'])
 @admin_required

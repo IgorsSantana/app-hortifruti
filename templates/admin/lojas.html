@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Lojas - Admin{% endblock %}
+
+{% block brand_text %}Painel Admin{% endblock %}
+
+{% block brand_link %}/admin{% endblock %}
+
+{% block nav_links %}
+<li class="nav-item">
+    <a class="nav-link" href="/admin">
+        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="/admin/products">
+        <i class="bi bi-box-seam me-1"></i>Produtos
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="/admin/dias-contagem">
+        <i class="bi bi-calendar-check me-1"></i>Dias de Contagem
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="/admin/lojas">
+        <i class="bi bi-shop me-1"></i>Lojas
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="/relatorio">
+        <i class="bi bi-graph-up me-1"></i>Relatórios
+    </a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Mensagens Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Cabeçalho -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="h4 mb-0">
+                    <i class="bi bi-shop me-2"></i>Gerenciar Lojas
+                </h2>
+                <a href="/admin" class="btn btn-light btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>Voltar ao Dashboard
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-0">
+                <i class="bi bi-info-circle me-1"></i>
+                Visualize todas as lojas cadastradas no sistema e seus respectivos usuários.
+            </p>
+        </div>
+    </div>
+
+    <!-- Tabela de Lojas -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            {% if lojas %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col" style="width: 15%;">Loja</th>
+                                <th scope="col" style="width: 20%;">Usuário</th>
+                                <th scope="col" style="width: 15%;">Status</th>
+                                <th scope="col" style="width: 50%;">Informações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loja_nome in todas_lojas %}
+                                {% set loja_info = lojas[loja_nome] %}
+                                <tr>
+                                    <td>
+                                        <strong class="text-success">{{ loja_info.nome }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if loja_info.usuarios %}
+                                            {% for usuario in loja_info.usuarios %}
+                                                <span class="badge bg-primary me-1">
+                                                    <i class="bi bi-person me-1"></i>{{ usuario.username }}
+                                                </span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">
+                                                <i class="bi bi-x-circle me-1"></i>Sem usuário cadastrado
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if loja_info.usuarios %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>Ativa
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-x-circle me-1"></i>Inativa
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if loja_info.usuarios %}
+                                            <small class="text-muted">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                {{ loja_info.usuarios|length }} usuário(s) cadastrado(s)
+                                            </small>
+                                        {% else %}
+                                            <small class="text-warning">
+                                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                                Esta loja não possui usuário cadastrado no banco de dados.
+                                            </small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-shop display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">Nenhuma loja cadastrada</h4>
+                    <p class="text-muted">As lojas serão carregadas automaticamente.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Total de Lojas</h5>
+                    <h2 class="text-success">{{ todas_lojas|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Lojas com Usuário</h5>
+                    <h2 class="text-primary">
+                        {% set lojas_com_usuario = [] %}
+                        {% for loja_nome in todas_lojas %}
+                            {% if lojas[loja_nome].usuarios %}
+                                {% set _ = lojas_com_usuario.append(1) %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ lojas_com_usuario|length }}
+                    </h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Lojas sem Usuário</h5>
+                    <h2 class="text-warning">
+                        {% set lojas_sem_usuario = [] %}
+                        {% for loja_nome in todas_lojas %}
+                            {% if not lojas[loja_nome].usuarios %}
+                                {% set _ = lojas_sem_usuario.append(1) %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ lojas_sem_usuario|length }}
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

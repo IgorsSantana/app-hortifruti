@@ -12,6 +12,7 @@ USUARIOS = [
     ('fcl1', 'fcl123', 'loja', 'FCL1'),
     ('fcl2', 'fcl223', 'loja', 'FCL2'),
     ('fcl3', 'fcl323', 'loja', 'FCL3'),
+    ('fcl4', 'fcl423', 'loja', 'FCL4'),
     ('Igor', 'S4nt4n4', 'admin', None),
     ('Gabriel', 'G1a2l', 'admin', None),
     ('Paulo', 'paulo123', 'admin', None)
