@@ -26,6 +26,8 @@
 
 ## Validação
 
+A hospedagem deste servidor Flask é exclusivamente no Render. netlify.toml cancela builds automáticos do Netlify, cuja integração foi conectada por engano. Isso evita a instalação indevida de dependências para Deploy Previews; não modifica o Procfile nem o deploy do Render. A integração do Netlify ainda pode ser desvinculada pelo painel da conta. Builds disparados por build hooks não respeitam o comando ignore.
+
 Antes de publicar em produção, configure SECRET_KEY com um valor aleatório longo e persistente no ambiente do servidor. A chave fixa que estava no código foi removida. Com DATABASE_URL configurada, a aplicação exige SECRET_KEY para iniciar; isso mantém a mesma chave entre reinicializações e workers. No desenvolvimento sem banco remoto, uma chave temporária é gerada a cada início.
 
 Execute, com as dependências instaladas:

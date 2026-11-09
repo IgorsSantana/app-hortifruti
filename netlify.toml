@@ -1,0 +1,4 @@
+# Este servidor Flask é hospedado exclusivamente no Render.
+# No Netlify, código de saída 0 cancela builds automáticos antes da instalação.
+[build]
+  ignore = "exit 0"
