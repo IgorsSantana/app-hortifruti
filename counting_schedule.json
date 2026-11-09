@@ -1,0 +1,873 @@
+{
+  "effective_from": "2026-11-09",
+  "active_days": [
+    1,
+    2,
+    5
+  ],
+  "items": [
+    {
+      "codigo_interno": "310100",
+      "nome": "ABACATE",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "311283",
+      "nome": "ABACAXI MÉDIO",
+      "unidade_fracionada": "UN",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "352544",
+      "nome": "ABACAXI HAVAÍ",
+      "unidade_fracionada": "UN",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310101",
+      "nome": "ABÓBORA BAIANA",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310102",
+      "nome": "ABÓBORA CARAVELA",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "368822",
+      "nome": "ABÓBORA SERGIPANA",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310103",
+      "nome": "ABOBRINHA VERDE",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310289",
+      "nome": "ALHO IMPORTADO",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310108",
+      "nome": "ALHO SEM CASCA",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310109",
+      "nome": "AMEIXA IMPORTADA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "340139",
+      "nome": "AMEIXA NACIONAL",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310113",
+      "nome": "BANANA-DA-TERRA",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310110",
+      "nome": "BANANA-MAÇÃ",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310178",
+      "nome": "BANANA-NANICA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310111",
+      "nome": "BANANA-OURO",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310112",
+      "nome": "BANANA-PRATA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310214",
+      "nome": "BATATA ASTERIX",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310114",
+      "nome": "BATATA-BAROA",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310115",
+      "nome": "BATATA-DOCE ROXA",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "340132",
+      "nome": "BATATA ESCOVADA",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310173",
+      "nome": "BATATA LAVADA MIÚDA",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310119",
+      "nome": "BATATA LAVADA EXTRA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "334978",
+      "nome": "BATATA YACON",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310121",
+      "nome": "BERINJELA",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310122",
+      "nome": "BETERRABA",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "311302",
+      "nome": "BRÓCOLIS AMERICANO",
+      "unidade_fracionada": "UN",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310124",
+      "nome": "CAQUI",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "331637",
+      "nome": "CAQUI BANDEJA",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "322345",
+      "nome": "CARAMBOLA",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310125",
+      "nome": "CEBOLA NACIONAL",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "334535",
+      "nome": "CEBOLA ROXA",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310126",
+      "nome": "CENOURA",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310127",
+      "nome": "CHUCHU",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310128",
+      "nome": "COCO SECO",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "313507",
+      "nome": "COUVE-FLOR UNIDADE",
+      "unidade_fracionada": "UN",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310085",
+      "nome": "ERVILHA BANDEJA",
+      "unidade_fracionada": "UN",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "322470",
+      "nome": "GENGIBRE",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310130",
+      "nome": "GOIABA",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "334824",
+      "nome": "GRAVIOLA",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310131",
+      "nome": "INHAME",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310132",
+      "nome": "JILÓ",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310133",
+      "nome": "KIWI",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "332166",
+      "nome": "KIWI 600 G BANDEJA",
+      "unidade_fracionada": "UN",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310134",
+      "nome": "LARANJA BAHIA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310135",
+      "nome": "LARANJA-LIMA",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310136",
+      "nome": "LARANJA-PERA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310180",
+      "nome": "LIMA-DA-PÉRSIA",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310138",
+      "nome": "LIMÃO",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "334823",
+      "nome": "LIMÃO-SICILIANO",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310174",
+      "nome": "MAÇÃ ARGENTINA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310140",
+      "nome": "MAÇÃ PINK",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310211",
+      "nome": "MAÇÃ NACIONAL",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310139",
+      "nome": "MAÇÃ VERDE",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310142",
+      "nome": "MAMÃO AMAZONAS",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310175",
+      "nome": "MAMÃO FORMOSA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310143",
+      "nome": "MANDIOCA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "375054",
+      "nome": "MANGA PALMER",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310144",
+      "nome": "MANGA TOMMY",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310147",
+      "nome": "MARACUJÁ",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310148",
+      "nome": "MELANCIA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "322436",
+      "nome": "MELANCIA BABY",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310149",
+      "nome": "MELÃO",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "322437",
+      "nome": "MELÃO REDINHA",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310240",
+      "nome": "MELÃO SAPIEL",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310150",
+      "nome": "MEXERICA MURCOTT",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310152",
+      "nome": "MEXERICA PONKAN",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310151",
+      "nome": "MEXERICA RIO",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "312655",
+      "nome": "MILHO VERDE BANDEJA",
+      "unidade_fracionada": "UN",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310155",
+      "nome": "MORANGA HÍBRIDA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "324846",
+      "nome": "MORANGO 240 G",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "340135",
+      "nome": "NECTARINA IMPORTADA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310107",
+      "nome": "NECTARINA NACIONAL",
+      "unidade_fracionada": "KG",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "349001",
+      "nome": "OVO BRANCO CLASSE A",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "345537",
+      "nome": "OVOS BRANCOS COM 20",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "311309",
+      "nome": "OVOS BRANCOS DÚZIA",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "311311",
+      "nome": "OVOS DE CODORNA CT.",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "344412",
+      "nome": "OVOS VERMELHOS COM 10",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "311310",
+      "nome": "OVOS VERMELHOS DÚZIA",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310154",
+      "nome": "PEPINO",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "345140",
+      "nome": "PEPINO JAPONÊS",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "322361",
+      "nome": "PERA PORTUGUESA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310156",
+      "nome": "PERA WILLIAN",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "340137",
+      "nome": "PÊSSEGO IMPORTADO",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310158",
+      "nome": "PÊSSEGO NACIONAL",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "312952",
+      "nome": "PIMENTÃO MISTO",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310160",
+      "nome": "PIMENTÃO VERDE",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310161",
+      "nome": "QUIABO",
+      "unidade_fracionada": "UN",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310163",
+      "nome": "REPOLHO ROXO",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310162",
+      "nome": "REPOLHO VERDE",
+      "unidade_fracionada": "KG",
+      "days": [
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310237",
+      "nome": "TOMATE-CEREJA BANDEJA",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310165",
+      "nome": "TOMATE EXTRA",
+      "unidade_fracionada": "KG",
+      "days": [
+        1,
+        2,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310167",
+      "nome": "UVA ITÁLIA",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310170",
+      "nome": "UVA NIÁGARA",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "360434",
+      "nome": "UVA NIÁGARA 500 G BANDEJA",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310169",
+      "nome": "UVA RED GLOBE",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "310166",
+      "nome": "UVA RUBI",
+      "unidade_fracionada": "UN",
+      "days": [
+        5
+      ]
+    },
+    {
+      "codigo_interno": "375418",
+      "nome": "UVA SEM SEMENTE 500 G VERDE",
+      "unidade_fracionada": "UN",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "368980",
+      "nome": "UVA SEM SEMENTE 500 G PRETA",
+      "unidade_fracionada": "UN",
+      "days": [
+        1,
+        5
+      ]
+    },
+    {
+      "codigo_interno": "375105",
+      "nome": "VAGEM",
+      "unidade_fracionada": "UN",
+      "days": [
+        2,
+        5
+      ]
+    }
+  ]
+}
