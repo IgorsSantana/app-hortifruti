@@ -6,7 +6,6 @@ Pode ser executado múltiplas vezes sem causar problemas.
 
 import os
 import sqlite3
-import psycopg2
 
 def migrate_database():
     """Migra o banco de dados adicionando a tabela dias_semana_config"""
@@ -21,6 +20,7 @@ def migrate_database():
     try:
         # Conectar ao banco
         if is_postgres:
+            import psycopg2
             print("Conectando ao PostgreSQL...")
             conn = psycopg2.connect(db_url)
         else:
@@ -112,6 +112,10 @@ def migrate_database():
             except Exception as e:
                 print(f"  - {tabela}: Erro ao verificar ({e})")
         
+        # Índices não alteram os registros e tornam os filtros por data/loja mais baratos.
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_pedidos_data_loja ON pedidos (data_pedido, loja)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_availability_day ON product_availability (day_id, product_id)")
+
         # Commit das alterações
         conn.commit()
         print(f"\n✅ Migração concluída com sucesso!")
