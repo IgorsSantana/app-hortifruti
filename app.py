@@ -1,19 +1,21 @@
 # app.py
 
 import sqlite3
-import pandas as pd
-import numpy as np
-import psycopg2
 import os
-import pyodbc
 import json
+from contextlib import closing
+from report_data import DAY_NAMES, normalized_date, build_report, aggregate_orders
 from flask import Flask, render_template, request, redirect, url_for, session, make_response, flash, jsonify
 from datetime import datetime, date
 from functools import wraps
-from fpdf import FPDF
 
 app = Flask(__name__, static_folder='static')
-app.secret_key = 'chave-super-secreta-para-o-projeto-hortifruti'
+app.secret_key = os.environ.get('SECRET_KEY')
+if not app.secret_key:
+    if os.environ.get('DATABASE_URL'):
+        raise RuntimeError("Configure SECRET_KEY no ambiente antes de iniciar o servidor.")
+    app.secret_key = os.urandom(32)
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 3600
 
 DATABASE = 'hortifruti.db'
 DIAS_PEDIDO = {0: "SEGUNDA-FEIRA", 1: "TERÇA-FEIRA", 2: "QUARTA-FEIRA", 4: "SEXTA-FEIRA", 5: "SÁBADO"}
@@ -24,6 +26,7 @@ LOJAS = ["BCS", "SJN", "FCL2", "MEP", "FCL3", "FCL4"]
 def get_db():
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
+        import psycopg2
         return psycopg2.connect(db_url)
     else:
         conn = sqlite3.connect(DATABASE)
@@ -59,100 +62,48 @@ def api_key_required(f):
 
 # --- FUNÇÕES AUXILIARES DE DADOS ---
 
-def get_products_for_day(day_id):
-    db = get_db()
-    cursor = db.cursor()
-    db_url = os.environ.get('DATABASE_URL')
-    query = "SELECT p.id, p.name, p.unidade_fracionada, p.codigo_interno, p.cost FROM products p JOIN product_availability pa ON p.id = pa.product_id WHERE pa.day_id = %s ORDER BY p.name;" if db_url else "SELECT p.id, p.name, p.unidade_fracionada, p.codigo_interno, p.cost FROM products p JOIN product_availability pa ON p.id = pa.product_id WHERE pa.day_id = ? ORDER BY p.name;"
-    cursor.execute(query, (day_id,))
-    products_data = cursor.fetchall()
-    products_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in products_data]
-    for p in products_list: p['nome'] = p.pop('name')
-    cursor.close()
-    db.close()
-    return products_list
+def get_products_for_day(day_id, db=None):
+    owns_connection = db is None
+    db = db if db is not None else get_db()
+    try:
+        with closing(db.cursor()) as cursor:
+            placeholder = "%s" if os.environ.get('DATABASE_URL') else "?"
+            cursor.execute(
+                "SELECT p.id, p.name AS nome, p.unidade_fracionada, p.codigo_interno, p.cost "
+                "FROM products p JOIN product_availability pa ON p.id = pa.product_id "
+                f"WHERE pa.day_id = {placeholder} ORDER BY p.name", (day_id,))
+            columns = [desc[0] for desc in cursor.description]
+            return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    finally:
+        if owns_connection:
+            db.close()
+
 
 def obter_dados_relatorio(data_selecionada_str):
-    try:
-        data_obj = datetime.strptime(data_selecionada_str, '%Y-%m-%d').date()
-    except (ValueError, TypeError):
-        data_obj = date.today()
-    
-    dia_da_semana = data_obj.weekday()
-    
-    # Verificar se o dia da semana está ativo na configuração
-    db = get_db()
-    cursor = db.cursor()
-    db_url = os.environ.get('DATABASE_URL')
-    query = "SELECT ativo FROM dias_semana_config WHERE dia_id = %s;" if db_url else "SELECT ativo FROM dias_semana_config WHERE dia_id = ?;"
-    cursor.execute(query, (dia_da_semana,))
-    result = cursor.fetchone()
-    cursor.close()
-    db.close()
-    
-    # Se não encontrou na configuração ou está inativo, usar lógica antiga
-    if not result or not result[0]:
-        if dia_da_semana not in DIAS_PEDIDO: 
+    data_obj = normalized_date(data_selecionada_str)
+    day = data_obj.weekday()
+    placeholder = "%s" if os.environ.get('DATABASE_URL') else "?"
+    with closing(get_db()) as db, closing(db.cursor()) as cursor:
+        cursor.execute(f"SELECT ativo FROM dias_semana_config WHERE dia_id = {placeholder}", (day,))
+        config = cursor.fetchone()
+        active = bool(config[0]) if config is not None else day in DIAS_PEDIDO
+        if not active:
             return "INATIVO", None, None
-    
-    nome_dia = DIAS_PEDIDO[dia_da_semana]
-    produtos_do_dia = get_products_for_day(dia_da_semana)
-    
-    for p in produtos_do_dia:
-        p['custo'] = p.get('cost') or 0.0
+        products = get_products_for_day(day, db)
+        if not products:
+            return [], DAY_NAMES[day], data_obj
+        # Aggregate at the database, so Python receives one row per product/type/store.
+        cursor.execute(
+            "SELECT produto, tipo, loja, SUM(quantidade) FROM pedidos "
+            f"WHERE data_pedido = {placeholder} GROUP BY produto, tipo, loja",
+            (data_obj.isoformat(),))
+        counts = cursor.fetchall()
+        cursor.execute(
+            "SELECT produto_nome, loja_nome, quantidade_pedida FROM pedidos_finais "
+            f"WHERE data_pedido = {placeholder}", (data_obj.isoformat(),))
+        orders = cursor.fetchall()
+    return build_report(products, counts, orders, LOJAS), DAY_NAMES[day], data_obj
 
-    if not produtos_do_dia:
-        return [], nome_dia, data_obj
-
-    produtos_do_dia_nomes = [p['nome'] for p in produtos_do_dia]
-    db = get_db()
-    query_pedidos = f"SELECT produto, tipo, loja, quantidade FROM pedidos WHERE data_pedido = '{data_selecionada_str}'"
-    df_pedidos = pd.read_sql_query(query_pedidos, db)
-    
-    db_url = os.environ.get('DATABASE_URL')
-    query_pedidos_finais = "SELECT produto_nome, loja_nome, quantidade_pedida FROM pedidos_finais WHERE data_pedido = %s" if db_url else "SELECT produto_nome, loja_nome, quantidade_pedida FROM pedidos_finais WHERE data_pedido = ?"
-    df_pedidos_finais = pd.read_sql(query_pedidos_finais, db, params=(data_selecionada_str,))
-    db.close()
-    
-    df_caixas = df_pedidos[df_pedidos['tipo'] == 'Caixa']
-    df_fracionado = df_pedidos[df_pedidos['tipo'].isin(['KG', 'UN'])]
-    pivot_caixas = pd.pivot_table(df_caixas, values='quantidade', index='produto', columns='loja', aggfunc='sum').reindex(index=produtos_do_dia_nomes, columns=LOJAS).fillna(0).astype(int)
-    pivot_fracionado = pd.pivot_table(df_fracionado, values='quantidade', index='produto', columns='loja', aggfunc='sum').reindex(index=produtos_do_dia_nomes, columns=LOJAS).fillna(0).astype(int)
-    
-    pedidos_salvos = {}
-    for index, row in df_pedidos_finais.iterrows():
-        key = f"{row['produto_nome']}_{row['loja_nome']}"
-        pedidos_salvos[key] = row['quantidade_pedida']
-
-    report_data = []
-    for produto in produtos_do_dia:
-        produto_nome = produto['nome']
-        produto_row = {"produto_nome": produto_nome, "custo": f"R$ {produto['custo']:.2f}".replace('.', ','), "lojas": []}
-        for loja_nome in LOJAS:
-            caixa_val = pivot_caixas.loc[produto_nome, loja_nome] if produto_nome in pivot_caixas.index else 0
-            fracao_val = pivot_fracionado.loc[produto_nome, loja_nome] if produto_nome in pivot_fracionado.index else 0
-            fracao_str = "0"
-            if fracao_val > 0:
-                fracao_str = f"{fracao_val} {produto['unidade_fracionada'].lower()}"
-            pedido_key = f"{produto_nome}_{loja_nome}"
-            pedido_salvo_val = pedidos_salvos.get(pedido_key, '')
-            loja_data = {"nome": loja_nome, "caixa": caixa_val, "fracao": fracao_str, "pedido_id": f"pedido_{produto_nome.replace(' ', '_').replace('.', '')}_{loja_nome}", "pedido_salvo": pedido_salvo_val}
-            produto_row["lojas"].append(loja_data)
-        report_data.append(produto_row)
-            
-    return report_data, nome_dia, data_obj
-
-class PDF(FPDF):
-    def __init__(self, orientation='P', unit='mm', format='A4', data_pedido=''):
-        super().__init__(orientation, unit, format)
-        self.data_pedido = data_pedido
-
-    def header(self):
-        self.set_font('Arial', 'B', 15)
-        self.cell(0, 10, 'Pedido de Hortifruti', 0, 1, 'C')
-        self.set_font('Arial', '', 10)
-        self.cell(0, 10, f'Pedido do Dia: {self.data_pedido}', 0, 1, 'C')
-        self.ln(5)
 
 # --- ROTAS DA APLICAÇÃO ---
 @app.route('/login', methods=['GET', 'POST'])
@@ -218,7 +169,7 @@ def index():
     
     # Se é usuário normal e o dia está ativo, mostrar contagem
     if dia_ativo:
-        nome_dia = DIAS_PEDIDO[hoje]
+        nome_dia = DAY_NAMES[hoje]
         produtos_do_dia = get_products_for_day(hoje)
         db = get_db()
         cursor = db.cursor()
@@ -248,35 +199,42 @@ def enviar_pedido():
     loja = session.get('store_name')
     if not loja: return "Erro: Usuario nao associado a uma loja.", 400
     data_pedido_str = datetime.now().strftime('%Y-%m-%d')
-    db = get_db()
-    cursor = db.cursor()
     hoje_weekday = datetime.now().weekday()
     produtos_do_dia = get_products_for_day(hoje_weekday)
     produtos_map = {p['nome']: p['unidade_fracionada'] for p in produtos_do_dia}
+    rows = []
+    for key, value in request.form.items():
+        prefix, _, name = key.partition('_')
+        if prefix not in ('caixas', 'fracionado') or name not in produtos_map:
+            continue
+        try:
+            quantity = int(value) if value else 0
+            if quantity < 0:
+                raise ValueError
+        except ValueError:
+            return "Informe quantidades inteiras maiores ou iguais a zero.", 400
+        if quantity:
+            kind = 'Caixa' if prefix == 'caixas' else produtos_map[name]
+            rows.append((data_pedido_str, loja, name, kind, quantity))
+    db = get_db()
+    cursor = db.cursor()
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
         delete_query = "DELETE FROM pedidos WHERE data_pedido = %s AND loja = %s"
         insert_query = "INSERT INTO pedidos (data_pedido, loja, produto, tipo, quantidade) VALUES (%s, %s, %s, %s, %s)"
-        cursor.execute(delete_query, (data_pedido_str, loja))
     else:
         delete_query = "DELETE FROM pedidos WHERE data_pedido = ? AND loja = ?"
         insert_query = "INSERT INTO pedidos (data_pedido, loja, produto, tipo, quantidade) VALUES (?, ?, ?, ?, ?)"
+    try:
         cursor.execute(delete_query, (data_pedido_str, loja))
-    for key, quantidade_str in request.form.items():
-        if quantidade_str and int(quantidade_str) > 0:
-            quantidade = int(quantidade_str)
-            tipo = None
-            nome_produto = None
-            if key.startswith('caixas_'):
-                tipo = 'Caixa'
-                nome_produto = key.replace('caixas_', '')
-            elif key.startswith('fracionado_'):
-                nome_produto = key.replace('fracionado_', '')
-                if nome_produto in produtos_map: tipo = produtos_map[nome_produto]
-            if tipo and nome_produto: cursor.execute(insert_query, (data_pedido_str, loja, nome_produto, tipo, quantidade))
-    db.commit()
-    cursor.close()
-    db.close()
+        cursor.executemany(insert_query, rows)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        cursor.close()
+        db.close()
     return redirect(url_for('sucesso'))
     
 @app.route('/sucesso')
@@ -287,7 +245,7 @@ def sucesso():
 @app.route('/relatorio')
 @admin_required
 def relatorio():
-    data_selecionada = request.args.get('data', date.today().strftime('%Y-%m-%d'))
+    data_selecionada = normalized_date(request.args.get('data')).isoformat()
     report_data, nome_dia, data_obj = obter_dados_relatorio(data_selecionada)
     
     # Se o dia está inativo na configuração
@@ -354,7 +312,7 @@ def admin_products():
     products_data = cursor.fetchall()
     products_list = [dict(zip([desc[0] for desc in cursor.description], row)) for row in products_data]
     db.close()
-    id_to_day_name = {v: k for k, v in DIAS_PEDIDO.items()}
+    id_to_day_name = DAY_NAMES
     for product in products_list:
         if product['days_str']:
             day_ids = [int(i) for i in product['days_str'].split(',')]
@@ -535,27 +493,37 @@ def exportar_pedido_pdf():
     if not pedido_data_str:
         return "Nenhum dado de pedido recebido.", 400
     pedidos = json.loads(pedido_data_str)
-    df = pd.DataFrame(pedidos)
-    tabela_pedido = pd.pivot_table(df, values='pedido', index='produto', columns='loja', aggfunc='sum').fillna(0).astype(int)
-    tabela_pedido = tabela_pedido.reindex(columns=LOJAS).fillna(0).astype(int)
-    pdf = PDF(orientation='P', unit='mm', format='A4', data_pedido=datetime.strptime(data_do_pedido, "%Y-%m-%d").strftime("%d/%m/%Y"))
+    from fpdf import FPDF
+
+    class PDF(FPDF):
+        def header(self):
+            self.set_font('Helvetica', 'B', 15)
+            self.cell(0, 10, 'Pedido de Hortifruti', new_x="LMARGIN", new_y="NEXT", align='C')
+            self.set_font('Helvetica', '', 10)
+            self.cell(0, 10, f'Pedido do Dia: {normalized_date(data_do_pedido).strftime("%d/%m/%Y")}',
+                      new_x="LMARGIN", new_y="NEXT", align='C')
+            self.ln(5)
+
+    tabela_pedido = aggregate_orders(pedidos)
+    pdf = PDF(orientation='P', unit='mm', format='A4')
     pdf.add_page()
-    pdf.set_font('Arial', size=9)
-    col_widths = [75] + [18] * len(tabela_pedido.columns)
+    pdf.set_font('Helvetica', size=9)
+    col_widths = [75] + [18] * len(LOJAS)
     line_height = pdf.font_size * 2
-    pdf.set_font('Arial', 'B', 9)
-    headers = ['Produto'] + list(tabela_pedido.columns)
+    pdf.set_font('Helvetica', 'B', 9)
+    headers = ['Produto'] + LOJAS
     for i, header in enumerate(headers):
         pdf.cell(col_widths[i], line_height, header, border=1, align='C')
     pdf.ln(line_height)
-    pdf.set_font('Arial', '', 9)
-    for produto, row in tabela_pedido.iterrows():
+    pdf.set_font('Helvetica', '', 9)
+    for produto, row in tabela_pedido:
         try:
             produto_encoded = produto.encode('latin-1', 'replace').decode('latin-1')
         except:
             produto_encoded = 'Produto Invalido'
         pdf.cell(col_widths[0], line_height, produto_encoded, border=1)
-        for i, value in enumerate(row):
+        for i, loja in enumerate(LOJAS):
+            value = row.get(loja, 0)
             display_value = str(value) if value > 0 else ''
             pdf.cell(col_widths[i+1], line_height, display_value, border=1, align='C')
         pdf.ln(line_height)

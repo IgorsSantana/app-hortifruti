@@ -1,61 +1,34 @@
 {% extends "base.html" %}
-
 {% block title %}Contagem de Hortifruti{% endblock %}
-
-{% block brand_text %}Contagem Hortifruti{% endblock %}
-
-{% block nav_links %}
-<li class="nav-item">
-    <a class="nav-link active" href="/">
-        <i class="bi bi-house-door me-1"></i>Início
-    </a>
-</li>
-{% endblock %}
-
+{% block nav_links %}<li class="nav-item"><a class="nav-link" href="/">Minha contagem</a></li>{% endblock %}
 {% block content %}
-<div class="container mt-5 mb-5">
-        <div class="card shadow-sm">
-            <div class="card-header bg-success text-white">
-                <h1 class="h3 mb-0">Contagem para a Loja: <strong>{{ loja_logada }}</strong></h1>
-            </div>
-            <div class="card-body">
-                <h2 class="card-title h4 text-success">{{ dia }}</h2>
-                <hr>
-                <form action="/enviar" method="post">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th scope="col">Produto</th>
-                                    <th scope="col" style="min-width: 120px;">Quantidade (Caixas)</th>
-                                    <th scope="col" style="min-width: 150px;">Quantidade (Fracionada)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for produto in produtos %}
-                                <tr>
-                                    <td>{{ produto.nome }}</td>
-                                    <td>
-                                        <input type="number" pattern="[0-9]*" inputmode="numeric" name="caixas_{{ produto.nome }}" class="form-control" min="0" placeholder="0"
-                                               value="{{ dados_salvos.get('caixas_' + produto.nome, '') }}">
-                                    </td>
-                                    <td>
-                                        <div class="input-group">
-                                            <input type="number" pattern="[0-9]*" inputmode="numeric" name="fracionado_{{ produto.nome }}" class="form-control" min="0" placeholder="0"
-                                                   value="{{ dados_salvos.get('fracionado_' + produto.nome, '') }}">
-                                            <span class="input-group-text">{{ produto.unidade_fracionada }}</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-success btn-lg">Enviar Contagem</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+<div class="container mb-4">
+    <div class="page-heading">
+        <div><div class="eyebrow">CONTAGEM DO DIA · {{ dia }}</div><h1 class="mb-0">Vamos conferir o estoque?</h1><p>Informe as caixas e as quantidades fracionadas de cada produto.</p></div>
+        <span class="store-pill"><i class="bi bi-shop me-2" aria-hidden="true"></i>Loja {{ loja_logada }}</span>
     </div>
+    <form action="{{ url_for('enviar_pedido') }}" method="post">
+        <div class="card">
+            <div class="count-toolbar">
+                <div class="search-field"><i class="bi bi-search" aria-hidden="true"></i><label for="product-search" class="visually-hidden">Buscar produto ou código</label><input type="search" id="product-search" class="form-control" placeholder="Buscar produto ou código…" data-product-search autocomplete="off"></div>
+                <span class="count-summary" id="search-result" role="status">{{ produtos|length }} produtos</span>
+            </div>
+            <table class="table count-table">
+                <thead><tr><th scope="col">Produto</th><th scope="col">Caixas</th><th scope="col">Fracionado</th></tr></thead>
+                <tbody>
+                {% for produto in produtos %}
+                    <tr data-product-row="{{ produto.nome }} {{ produto.codigo_interno or '' }}">
+                        <td><span class="product-name">{{ produto.nome }}</span><span class="product-code">Cód. {{ produto.codigo_interno or '—' }}</span></td>
+                        <td data-label="Caixas"><input type="number" inputmode="numeric" name="caixas_{{ produto.nome }}" class="form-control" min="0" step="1" placeholder="0" aria-label="Caixas de {{ produto.nome }}" value="{{ dados_salvos.get('caixas_' + produto.nome, '') }}"></td>
+                        <td data-label="Fracionado"><div class="input-group"><input type="number" inputmode="numeric" name="fracionado_{{ produto.nome }}" class="form-control" min="0" step="1" placeholder="0" aria-label="{{ produto.unidade_fracionada }} de {{ produto.nome }}" value="{{ dados_salvos.get('fracionado_' + produto.nome, '') }}"><span class="input-group-text">{{ produto.unidade_fracionada }}</span></div></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <div id="search-empty" class="empty-search" hidden>Nenhum produto encontrado. Tente outro nome ou código.</div>
+            {% if not produtos %}<div class="empty-search">Nenhum produto disponível para este dia.</div>{% endif %}
+        </div>
+        <div class="count-actions"><div><strong class="d-block small" id="count-progress" role="status">0 de {{ produtos|length }} produtos preenchidos</strong><p>Os dados serão salvos ao enviar.</p></div><button type="submit" class="btn btn-success" {% if not produtos %}disabled{% endif %}><i class="bi bi-check2-circle me-2" aria-hidden="true"></i>Enviar contagem</button></div>
+    </form>
+</div>
 {% endblock %}

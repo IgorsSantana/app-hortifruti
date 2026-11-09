@@ -103,7 +103,7 @@
             <h2 class="h4 mb-0">Exibindo Relatório para: <strong>{{ data_hoje }}</strong></h2>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
+            <div class="table-responsive report-scroll" tabindex="0" role="region" aria-label="Contagens por loja">
                 <table class="table table-bordered" id="relatorio-tabela">
                     <thead class="table-dark">
                         <tr>
@@ -131,7 +131,7 @@
                                 <td>{{ loja.fracao if loja.fracao != '0' else '-' }}</td>
                                 <td>
                                     <input type="number" data-produto="{{ produto.produto_nome }}" data-loja="{{ loja.nome }}" 
-                                           class="form-control form-control-sm pedido-input mx-auto" min="0"
+                                           class="form-control form-control-sm pedido-input mx-auto" min="0" step="1" aria-label="Pedido de {{ produto.produto_nome }} para {{ loja.nome }}"
                                            value="{{ loja.pedido_salvo }}">
                                 </td>
                             {% endfor %}
@@ -180,7 +180,8 @@
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({
-                'pedido_data': JSON.stringify(pedido_data)
+                'pedido_data': JSON.stringify(pedido_data),
+                'data_pedido_form': {{ data_selecionada|tojson }}
             })
         })
         .then(response => response.json())
