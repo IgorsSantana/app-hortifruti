@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 import app as module
 from report_data import aggregate_orders
+from schedule_update import ensure_schema
 
 
 SCHEMA = """
@@ -29,6 +30,7 @@ def seed_database(path):
     password = secrets.token_urlsafe(24)
     with closing(sqlite3.connect(path)) as db:
         db.executescript(SCHEMA)
+        ensure_schema(db)
         db.executemany("INSERT INTO users VALUES(?,?,?,?,?)", [
             (1, 'demo', password, 'loja', 'BCS'), (2, 'admin-demo', password, 'admin', None)])
         db.executemany("INSERT INTO products VALUES(?,?,?,?,?)", [

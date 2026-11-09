@@ -8,6 +8,7 @@ from report_data import DAY_NAMES, normalized_date, build_report, aggregate_orde
 from flask import Flask, render_template, request, redirect, url_for, session, make_response, flash, jsonify
 from datetime import datetime, date
 from functools import wraps
+from schedule_update import history_boundary, day_is_active
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = os.environ.get('SECRET_KEY')
@@ -62,12 +63,20 @@ def api_key_required(f):
 
 # --- FUNÇÕES AUXILIARES DE DADOS ---
 
-def get_products_for_day(day_id, db=None):
+def get_products_for_day(day_id, db=None, selected_date=None):
     owns_connection = db is None
     db = db if db is not None else get_db()
     try:
         with closing(db.cursor()) as cursor:
             placeholder = "%s" if os.environ.get('DATABASE_URL') else "?"
+            boundary = history_boundary(db, selected_date or date.today(), placeholder)
+            if boundary:
+                cursor.execute(
+                    "SELECT product_id AS id,nome,unidade_fracionada,codigo_interno,cost "
+                    f"FROM contagem_product_history WHERE effective_until={placeholder} "
+                    f"AND day_id={placeholder} ORDER BY nome", (boundary, day_id))
+                columns = [desc[0] for desc in cursor.description]
+                return [dict(zip(columns, row)) for row in cursor.fetchall()]
             cursor.execute(
                 "SELECT p.id, p.name AS nome, p.unidade_fracionada, p.codigo_interno, p.cost "
                 "FROM products p JOIN product_availability pa ON p.id = pa.product_id "
@@ -84,12 +93,10 @@ def obter_dados_relatorio(data_selecionada_str):
     day = data_obj.weekday()
     placeholder = "%s" if os.environ.get('DATABASE_URL') else "?"
     with closing(get_db()) as db, closing(db.cursor()) as cursor:
-        cursor.execute(f"SELECT ativo FROM dias_semana_config WHERE dia_id = {placeholder}", (day,))
-        config = cursor.fetchone()
-        active = bool(config[0]) if config is not None else day in DIAS_PEDIDO
+        active = day_is_active(db, day, data_obj, placeholder)
         if not active:
             return "INATIVO", None, None
-        products = get_products_for_day(day, db)
+        products = get_products_for_day(day, db, data_obj)
         if not products:
             return [], DAY_NAMES[day], data_obj
         # Aggregate at the database, so Python receives one row per product/type/store.
@@ -218,6 +225,10 @@ def enviar_pedido():
             rows.append((data_pedido_str, loja, name, kind, quantity))
     db = get_db()
     cursor = db.cursor()
+    if not day_is_active(db, hoje_weekday, date.today(), "%s" if os.environ.get('DATABASE_URL') else "?"):
+        cursor.close()
+        db.close()
+        return "Não há contagem habilitada para hoje.", 400
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
         delete_query = "DELETE FROM pedidos WHERE data_pedido = %s AND loja = %s"
@@ -567,4 +578,6 @@ def update_costs():
     return jsonify({"message": f"{updates} produtos tiveram seus custos atualizados com sucesso."}), 200
 
 if __name__ == '__main__':
+    from schedule_update import run_schedule_update
+    run_schedule_update()
     app.run(debug=True)
